@@ -1,122 +1,113 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Sprout, LogOut, LayoutDashboard, User as UserIcon, LogIn, UserPlus } from 'lucide-react';
 
-function App() {
-  const [count, setCount] = useState(0)
+// Import Pages
+import LandingPage from './pages/LandingPage';
+import Register from './pages/Register';
+import VerifyOtp from './pages/VerifyOtp';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+
+function Navigation({ user, logout }) {
+  const location = useLocation();
+  const isAuthPage = ['/login', '/register', '/verify-otp'].includes(location.pathname);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
+    <nav className="navbar">
+      <Link to="/" className="logo">
+        <Sprout size={28} />
+        LocalFarm<span>Connect</span>
+      </Link>
+      <ul className="nav-links">
+        {user ? (
+          <>
             <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
+              <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+                <LayoutDashboard size={18} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                Dashboard
+              </Link>
             </li>
             <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
+              <button onClick={logout} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <LogOut size={16} />
+                Logout
+              </button>
             </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
+          </>
+        ) : (
+          <>
             <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
+              <Link to="/login" className={`nav-link ${location.pathname === '/login' ? 'active' : ''}`}>
+                <LogIn size={18} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                Login
+              </Link>
             </li>
             <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
+              <Link to="/register" className="btn btn-primary" style={{ padding: '0.5rem 1.2rem' }}>
+                <UserPlus size={18} />
+                Join
+              </Link>
             </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          </>
+        )}
+      </ul>
+    </nav>
+  );
 }
 
-export default App
+function AppContent() {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  // Load user from localStorage on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('token');
+    if (storedUser && storedToken) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const login = (userData, token) => {
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('token', token);
+    setUser(userData);
+    navigate('/dashboard');
+  };
+
+  const logout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    setUser(null);
+    navigate('/');
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Navigation user={user} logout={logout} />
+      <main style={{ flex: 1 }}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-otp" element={<VerifyOtp login={login} />} />
+          <Route path="/login" element={<Login login={login} />} />
+          <Route path="/dashboard" element={<Dashboard user={user} setUser={setUser} />} />
+        </Routes>
+      </main>
+      <footer style={{ background: 'var(--primary-deep)', color: 'white', padding: '2rem 1rem', textAlign: 'center', fontSize: '0.9rem' }}>
+        <div className="container" style={{ padding: 0 }}>
+          <p>&copy; {new Date().getFullYear()} Local Farm Connect. Cultivating direct community relationships.</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
+  );
+}
