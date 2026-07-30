@@ -29,10 +29,8 @@ app.get('/api/health', (req, res) => {
 
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
-app.use('/api/products', (req, res, next) => {
-  // We will mount products router here
-  next();
-});
+const productRoutes = require('./routes/productRoutes');
+app.use('/api/products', productRoutes);
 
 // Start Server after attempting DB connection
 const startServer = async () => {
