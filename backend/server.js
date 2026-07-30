@@ -27,11 +27,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Local Farm Connect API is running' });
 });
 
-// Placeholder route groupings to be populated in future milestones
-app.use('/api/auth', (req, res, next) => {
-  // We will mount auth router here
-  next();
-});
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
 app.use('/api/products', (req, res, next) => {
   // We will mount products router here
   next();
