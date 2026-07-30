@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User as UserIcon, ShoppingBag, MapPin, Phone, Mail, FileText, CheckCircle, Save, Sprout } from 'lucide-react';
+import { LayoutDashboard, User as UserIcon, ShoppingBag, MapPin, Phone, FileText, CheckCircle, Save, Sprout, Plus, Edit, Trash2, Camera, Package, Tag, Coins, X } from 'lucide-react';
 import MapInput from '../components/MapInput';
 
 const Dashboard = ({ user, setUser }) => {
@@ -20,6 +20,30 @@ const Dashboard = ({ user, setUser }) => {
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileLoading, setProfileLoading] = useState(false);
 
+  // Products Inventory States
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [productsError, setProductsError] = useState('');
+
+  // Modals States
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
+
+  // Add/Edit Product Form States
+  const [productForm, setProductForm] = useState({
+    title: '',
+    category: 'Vegetables',
+    unit: 'kg',
+    price: '',
+    stock: '',
+    description: ''
+  });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState('');
+
   // Redirect to login if user state doesn't exist
   useEffect(() => {
     if (!user) {
@@ -38,11 +62,50 @@ const Dashboard = ({ user, setUser }) => {
     });
   }, [user, navigate]);
 
+  // Fetch products when switching to inventory tab
+  useEffect(() => {
+    if (activeTab === 'inventory') {
+      fetchProducts();
+    }
+  }, [activeTab]);
+
   if (!user) {
     return null;
   }
 
-  // Handle input changes
+  // Fetch Farmer Products from backend
+  const fetchProducts = async () => {
+    setProductsLoading(true);
+    setProductsError('');
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      setProductsError('Token missing. Please login again.');
+      setProductsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/products', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to load products.');
+      }
+
+      setProducts(data);
+    } catch (err) {
+      setProductsError(err.message);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  // Handle profile inputs change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProfileData(prev => ({
@@ -51,7 +114,7 @@ const Dashboard = ({ user, setUser }) => {
     }));
   };
 
-  // Handle coordinates changes on Map
+  // Handle coordinate shifts on Map
   const handleCoordinatesChange = (lat, lng) => {
     setProfileData(prev => ({
       ...prev,
@@ -60,7 +123,7 @@ const Dashboard = ({ user, setUser }) => {
     }));
   };
 
-  // Submit Profile update
+  // Submit Profile edits
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     setProfileError('');
@@ -69,7 +132,7 @@ const Dashboard = ({ user, setUser }) => {
 
     const token = localStorage.getItem('token');
     if (!token) {
-      setProfileError('Authentication token missing. Please login again.');
+      setProfileError('Authentication token missing.');
       setProfileLoading(false);
       return;
     }
@@ -99,7 +162,6 @@ const Dashboard = ({ user, setUser }) => {
 
       setProfileSuccess('Profile and coordinates updated successfully!');
       
-      // Update global user state (localStorage and React context)
       const updatedUser = {
         ...user,
         farmName: data.user.farmName,
@@ -117,6 +179,159 @@ const Dashboard = ({ user, setUser }) => {
       setProfileError(err.message);
     } finally {
       setProfileLoading(false);
+    }
+  };
+
+  // Product Form Changes
+  const handleProductFormChange = (e) => {
+    const { name, value } = e.target;
+    setProductForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Product Image change
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Reset product form
+  const resetProductForm = () => {
+    setProductForm({
+      title: '',
+      category: 'Vegetables',
+      unit: 'kg',
+      price: '',
+      stock: '',
+      description: ''
+    });
+    setImageFile(null);
+    setImagePreview(null);
+    setFormError('');
+  };
+
+  // Open Add Modal
+  const openAddModal = () => {
+    resetProductForm();
+    setIsAddModalOpen(true);
+  };
+
+  // Open Edit Modal
+  const openEditModal = (product) => {
+    setCurrentProduct(product);
+    setProductForm({
+      title: product.title,
+      category: product.category,
+      unit: product.unit,
+      price: product.price,
+      stock: product.stock,
+      description: product.description || ''
+    });
+    setImageFile(null);
+    setImagePreview(product.image ? `http://localhost:5000${product.image}` : null);
+    setFormError('');
+    setIsEditModalOpen(true);
+  };
+
+  // Save product (Add or Edit)
+  const handleSaveProduct = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormLoading(true);
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setFormError('Authentication required.');
+      setFormLoading(false);
+      return;
+    }
+
+    const { title, category, unit, price, stock, description } = productForm;
+    if (!title || !category || !unit || !price || !stock) {
+      setFormError('Please fill in all required fields.');
+      setFormLoading(false);
+      return;
+    }
+
+    // Prepare FormData for file uploads (boundaries are handled automatically by browser)
+    const formDataObj = new FormData();
+    formDataObj.append('title', title);
+    formDataObj.append('category', category);
+    formDataObj.append('unit', unit);
+    formDataObj.append('price', price);
+    formDataObj.append('stock', stock);
+    formDataObj.append('description', description);
+    if (imageFile) {
+      formDataObj.append('image', imageFile);
+    }
+
+    try {
+      const url = isEditModalOpen 
+        ? `http://localhost:5000/api/products/${currentProduct._id}`
+        : 'http://localhost:5000/api/products';
+      
+      const method = isEditModalOpen ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataObj // No Content-Type header when uploading files
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error occurred while saving product.');
+      }
+
+      // Refresh listings and close modals
+      fetchProducts();
+      setIsAddModalOpen(false);
+      setIsEditModalOpen(false);
+      resetProductForm();
+
+    } catch (err) {
+      setFormError(err.message);
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Delete product listing
+  const handleDeleteProduct = async (productId) => {
+    if (!window.confirm('Are you sure you want to delete this product listing?')) return;
+    
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to delete listing.');
+      }
+
+      // Refresh list
+      fetchProducts();
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -277,8 +492,6 @@ const Dashboard = ({ user, setUser }) => {
                 )}
 
                 <form onSubmit={handleProfileSubmit}>
-                  
-                  {/* General Profile fields */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div className="form-group">
                       <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -331,12 +544,11 @@ const Dashboard = ({ user, setUser }) => {
                       className="form-input"
                       value={profileData.farmDescription}
                       onChange={handleInputChange}
-                      placeholder="Share details about what you grow, organic certifications, and hours of operation..."
+                      placeholder="Share details about what you grow, organic certifications, and hours..."
                       rows="4"
                     />
                   </div>
 
-                  {/* Relocation Map */}
                   <div className="form-group" style={{ marginTop: '1.5rem' }}>
                     <label className="form-label">
                       <strong>Adjust Location Pin</strong> (Move marker on map to relocate farm coordinates)
@@ -384,25 +596,159 @@ const Dashboard = ({ user, setUser }) => {
                     <Save size={18} />
                     {profileLoading ? 'Saving changes...' : 'Save Profile Changes'}
                   </button>
-
                 </form>
               </div>
             )}
 
-            {/* 3. INVENTORY CATALOG PLACEHOLDER (Will be built fully in Milestone 7) */}
+            {/* 3. INVENTORY CATALOG TAB */}
             {activeTab === 'inventory' && (
               <div>
-                <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Product Catalog / Inventory</h2>
-                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-                  View, add, edit, and delete your listed products.
-                </p>
-                <div style={{ textAlign: 'center', padding: '3rem 1rem', border: '2px dashed var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-                  <ShoppingBag size={48} style={{ color: 'var(--text-muted)', marginBottom: '1rem' }} />
-                  <h3>Inventory CRUD Modals Coming Soon</h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                    This section will be fully implemented in the next milestone (Milestone 7).
-                  </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Inventory Catalog</h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                      Manage products currently displayed on your farm page.
+                    </p>
+                  </div>
+                  <button onClick={openAddModal} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Plus size={16} /> Add Product
+                  </button>
                 </div>
+
+                {productsError && (
+                  <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                    {productsError}
+                  </div>
+                )}
+
+                {productsLoading ? (
+                  <div style={{ textAlign: 'center', padding: '3rem' }}>
+                    <p style={{ color: 'var(--text-muted)' }}>Loading inventory...</p>
+                  </div>
+                ) : products.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '4rem 1rem', border: '2px dashed var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                    <ShoppingBag size={48} style={{ color: 'var(--text-muted)', marginBottom: '1rem', opacity: 0.6 }} />
+                    <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>No Products Listed</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                      Start listing items in your direct e-commerce catalog for local buyers.
+                    </p>
+                    <button onClick={openAddModal} className="btn btn-secondary">
+                      List Your First Product
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                    gap: '1.5rem'
+                  }}>
+                    {products.map((product) => (
+                      <div key={product._id} className="card" style={{ padding: '0', overflow: 'hidden', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+                        {/* Product Image */}
+                        <div style={{ height: '160px', width: '100%', backgroundColor: '#f1f5f9', position: 'relative', display: 'flex', alignItems: 'center', justify: 'center', overflow: 'hidden' }}>
+                          {product.image ? (
+                            <img 
+                              src={`http://localhost:5000${product.image}`} 
+                              alt={product.title} 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+                              <Camera size={36} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
+                              <span style={{ fontSize: '0.8rem' }}>No image uploaded</span>
+                            </div>
+                          )}
+                          <span style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            background: 'rgba(27, 67, 50, 0.95)',
+                            color: 'white',
+                            padding: '3px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            fontWeight: '700'
+                          }}>
+                            {product.category}
+                          </span>
+                        </div>
+
+                        {/* Card Info */}
+                        <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          <h4 style={{ fontSize: '1.1rem', color: 'var(--primary-deep)', fontWeight: '700' }}>{product.title}</h4>
+                          {product.description && (
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: '38px' }}>
+                              {product.description}
+                            </p>
+                          )}
+                          
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
+                            <div>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>PRICE</span>
+                              <strong style={{ color: 'var(--accent-clay)', fontSize: '1.15rem' }}>
+                                ₹{parseFloat(product.price).toFixed(2)}
+                              </strong>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/{product.unit}</span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>STOCK</span>
+                              <span style={{
+                                fontSize: '0.85rem',
+                                fontWeight: '700',
+                                color: product.stock > 0 ? 'var(--primary-medium)' : '#dc2626'
+                              }}>
+                                {product.stock > 0 ? `${product.stock} ${product.unit}s` : 'Out of Stock'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Buttons */}
+                        <div style={{ display: 'flex', borderTop: '1px solid #f1f5f9', background: '#faf9f6' }}>
+                          <button
+                            onClick={() => openEditModal(product)}
+                            style={{
+                              flex: 1,
+                              border: 'none',
+                              background: 'transparent',
+                              padding: '0.75rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.3rem',
+                              fontSize: '0.85rem',
+                              fontWeight: '600',
+                              color: 'var(--primary-medium)',
+                              borderRight: '1px solid #f1f5f9',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Edit size={14} /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(product._id)}
+                            style={{
+                              flex: 1,
+                              border: 'none',
+                              background: 'transparent',
+                              padding: '0.75rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.3rem',
+                              fontSize: '0.85rem',
+                              fontWeight: '600',
+                              color: '#dc2626',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -411,6 +757,347 @@ const Dashboard = ({ user, setUser }) => {
         </div>
 
       </div>
+
+      {/* ================= ADD PRODUCT MODAL ================= */}
+      {isAddModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <button className="modal-close" onClick={() => setIsAddModalOpen(false)}>
+              <X size={20} />
+            </button>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Plus size={22} style={{ color: 'var(--primary-medium)' }} />
+              List New Product
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              Create an e-commerce listing for local consumers.
+            </p>
+
+            {formError && (
+              <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
+                {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveProduct}>
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Package size={14} /> Product Title *</label>
+                <input
+                  type="text"
+                  name="title"
+                  className="form-input"
+                  placeholder="e.g. Fresh Red Tomatoes"
+                  value={productForm.title}
+                  onChange={handleProductFormChange}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Tag size={14} /> Category *</label>
+                  <select
+                    name="category"
+                    className="form-input"
+                    value={productForm.category}
+                    onChange={handleProductFormChange}
+                    style={{ height: '43px' }}
+                  >
+                    <option value="Vegetables">Vegetables</option>
+                    <option value="Fruits">Fruits</option>
+                    <option value="Dairy & Eggs">Dairy & Eggs</option>
+                    <option value="Grains & Flours">Grains & Flours</option>
+                    <option value="Honey & Preserves">Honey & Preserves</option>
+                    <option value="Poultry & Meat">Poultry & Meat</option>
+                    <option value="Flowers & Herbs">Flowers & Herbs</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Sales Unit *</label>
+                  <select
+                    name="unit"
+                    className="form-input"
+                    value={productForm.unit}
+                    onChange={handleProductFormChange}
+                    style={{ height: '43px' }}
+                  >
+                    <option value="kg">Per Kilogram (kg)</option>
+                    <option value="bunch">Per Bunch</option>
+                    <option value="dozen">Per Dozen</option>
+                    <option value="piece">Per Piece</option>
+                    <option value="litre">Per Litre</option>
+                    <option value="box">Per Box</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Coins size={14} /> Price per Unit (₹) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="price"
+                    className="form-input"
+                    placeholder="e.g. 45.00"
+                    value={productForm.price}
+                    onChange={handleProductFormChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Available Stock Count *</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    className="form-input"
+                    placeholder="e.g. 50"
+                    value={productForm.stock}
+                    onChange={handleProductFormChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Description / Features</label>
+                <textarea
+                  name="description"
+                  className="form-input"
+                  placeholder="Organic, freshly harvested this morning, pesticide-free, etc..."
+                  value={productForm.description}
+                  onChange={handleProductFormChange}
+                  rows="3"
+                />
+              </div>
+
+              {/* Image Upload field */}
+              <div className="form-group" style={{ marginBottom: '1.75rem' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Camera size={14} /> Upload Product Image</label>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    style={{ display: 'none' }}
+                    id="product-image-upload"
+                  />
+                  <label
+                    htmlFor="product-image-upload"
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.85rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Camera size={14} /> Choose Image
+                  </label>
+                  
+                  {imagePreview && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        style={{ width: '44px', height: '44px', borderRadius: '4px', objectFit: 'cover', border: '1px solid var(--border-color)' }}
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => { setImageFile(null); setImagePreview(null); }} 
+                        className="btn btn-secondary" 
+                        style={{ padding: '0.2rem 0.5rem', color: '#dc2626', fontSize: '0.75rem' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={formLoading}>
+                  {formLoading ? 'Listing...' : 'List Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= EDIT PRODUCT MODAL ================= */}
+      {isEditModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <button className="modal-close" onClick={() => setIsEditModalOpen(false)}>
+              <X size={20} />
+            </button>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Edit size={22} style={{ color: 'var(--primary-medium)' }} />
+              Edit Product Listing
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              Modify details for your catalog listing.
+            </p>
+
+            {formError && (
+              <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
+                {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveProduct}>
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Package size={14} /> Product Title *</label>
+                <input
+                  type="text"
+                  name="title"
+                  className="form-input"
+                  value={productForm.title}
+                  onChange={handleProductFormChange}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Tag size={14} /> Category *</label>
+                  <select
+                    name="category"
+                    className="form-input"
+                    value={productForm.category}
+                    onChange={handleProductFormChange}
+                    style={{ height: '43px' }}
+                  >
+                    <option value="Vegetables">Vegetables</option>
+                    <option value="Fruits">Fruits</option>
+                    <option value="Dairy & Eggs">Dairy & Eggs</option>
+                    <option value="Grains & Flours">Grains & Flours</option>
+                    <option value="Honey & Preserves">Honey & Preserves</option>
+                    <option value="Poultry & Meat">Poultry & Meat</option>
+                    <option value="Flowers & Herbs">Flowers & Herbs</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Sales Unit *</label>
+                  <select
+                    name="unit"
+                    className="form-input"
+                    value={productForm.unit}
+                    onChange={handleProductFormChange}
+                    style={{ height: '43px' }}
+                  >
+                    <option value="kg">Per Kilogram (kg)</option>
+                    <option value="bunch">Per Bunch</option>
+                    <option value="dozen">Per Dozen</option>
+                    <option value="piece">Per Piece</option>
+                    <option value="litre">Per Litre</option>
+                    <option value="box">Per Box</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Coins size={14} /> Price per Unit (₹) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="price"
+                    className="form-input"
+                    value={productForm.price}
+                    onChange={handleProductFormChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Available Stock Count *</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    className="form-input"
+                    value={productForm.stock}
+                    onChange={handleProductFormChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Description / Features</label>
+                <textarea
+                  name="description"
+                  className="form-input"
+                  value={productForm.description}
+                  onChange={handleProductFormChange}
+                  rows="3"
+                />
+              </div>
+
+              {/* Image Upload field */}
+              <div className="form-group" style={{ marginBottom: '1.75rem' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Camera size={14} /> Update Product Image</label>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    style={{ display: 'none' }}
+                    id="product-image-edit"
+                  />
+                  <label
+                    htmlFor="product-image-edit"
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.85rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Camera size={14} /> Choose New Image
+                  </label>
+                  
+                  {imagePreview && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        style={{ width: '44px', height: '44px', borderRadius: '4px', objectFit: 'cover', border: '1px solid var(--border-color)' }}
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => { setImageFile(null); setImagePreview(null); }} 
+                        className="btn btn-secondary" 
+                        style={{ padding: '0.2rem 0.5rem', color: '#dc2626', fontSize: '0.75rem' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={formLoading}>
+                  {formLoading ? 'Saving...' : 'Save Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
