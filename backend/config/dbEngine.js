@@ -3,10 +3,14 @@ const path = require('path');
 const { getIsConnected } = require('./db');
 const User = require('../models/User');
 const Product = require('../models/Product');
+const Order = require('../models/Order');
+const Review = require('../models/Review');
 
 const DATA_DIR = path.join(__dirname, '../data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
+const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const REVIEWS_FILE = path.join(DATA_DIR, 'reviews.json');
 
 // Ensure data directory and files exist
 if (!fs.existsSync(DATA_DIR)) {
@@ -17,6 +21,12 @@ if (!fs.existsSync(USERS_FILE)) {
 }
 if (!fs.existsSync(PRODUCTS_FILE)) {
   fs.writeFileSync(PRODUCTS_FILE, JSON.stringify([]));
+}
+if (!fs.existsSync(ORDERS_FILE)) {
+  fs.writeFileSync(ORDERS_FILE, JSON.stringify([]));
+}
+if (!fs.existsSync(REVIEWS_FILE)) {
+  fs.writeFileSync(REVIEWS_FILE, JSON.stringify([]));
 }
 
 // Helper to read/write JSON
@@ -33,7 +43,6 @@ const writeJSON = (filePath, data) => {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 };
 
-// Generate a random string ID (mimics MongoDB's ObjectId structure enough to work interchangeably)
 const generateId = () => {
   return Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
 };
@@ -169,6 +178,102 @@ const dbEngine = {
         return deleted;
       }
       return null;
+    }
+  },
+
+  // Orders
+  createOrder: async (orderData) => {
+    if (getIsConnected()) {
+      const newOrder = new Order(orderData);
+      return await newOrder.save();
+    } else {
+      const orders = readJSON(ORDERS_FILE);
+      const _id = generateId();
+      const newOrder = {
+        _id,
+        status: 'Pending',
+        createdAt: new Date().toISOString(),
+        ...orderData
+      };
+      orders.push(newOrder);
+      writeJSON(ORDERS_FILE, orders);
+      return newOrder;
+    }
+  },
+
+  findOrdersByConsumer: async (consumerId) => {
+    if (getIsConnected()) {
+      return await Order.find({ consumerId }).sort({ createdAt: -1 });
+    } else {
+      const orders = readJSON(ORDERS_FILE);
+      return orders
+        .filter(o => o.consumerId === consumerId)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+  },
+
+  findOrdersByFarmer: async (farmerId) => {
+    if (getIsConnected()) {
+      return await Order.find({ farmerId }).sort({ createdAt: -1 });
+    } else {
+      const orders = readJSON(ORDERS_FILE);
+      return orders
+        .filter(o => o.farmerId === farmerId)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+  },
+
+  findOrderById: async (id) => {
+    if (getIsConnected()) {
+      return await Order.findById(id);
+    } else {
+      const orders = readJSON(ORDERS_FILE);
+      return orders.find(o => o._id === id) || null;
+    }
+  },
+
+  updateOrderStatus: async (id, status) => {
+    if (getIsConnected()) {
+      return await Order.findByIdAndUpdate(id, { status }, { new: true });
+    } else {
+      const orders = readJSON(ORDERS_FILE);
+      const index = orders.findIndex(o => o._id === id);
+      if (index !== -1) {
+        orders[index].status = status;
+        writeJSON(ORDERS_FILE, orders);
+        return orders[index];
+      }
+      return null;
+    }
+  },
+
+  // Reviews
+  createReview: async (reviewData) => {
+    if (getIsConnected()) {
+      const newReview = new Review(reviewData);
+      return await newReview.save();
+    } else {
+      const reviews = readJSON(REVIEWS_FILE);
+      const _id = generateId();
+      const newReview = {
+        _id,
+        createdAt: new Date().toISOString(),
+        ...reviewData
+      };
+      reviews.push(newReview);
+      writeJSON(REVIEWS_FILE, reviews);
+      return newReview;
+    }
+  },
+
+  findReviewsByFarm: async (farmId) => {
+    if (getIsConnected()) {
+      return await Review.find({ farmId }).sort({ createdAt: -1 });
+    } else {
+      const reviews = readJSON(REVIEWS_FILE);
+      return reviews
+        .filter(r => r.farmId === farmId)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
   }
 };
