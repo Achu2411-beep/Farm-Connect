@@ -38,7 +38,7 @@ const authController = {
       // Check if user exists
       const emailExists = await dbEngine.findUserByEmail(email);
       if (emailExists) {
-        return res.status(400).json({ message: 'A farmer with this email already exists.' });
+        return res.status(400).json({ message: 'An account with this email already exists.' });
       }
 
       const usernameExists = await dbEngine.findUserByUsername(username);
@@ -60,6 +60,7 @@ const authController = {
         password: hashedPassword,
         phone,
         address,
+        role: 'farmer',
         farmName,
         farmDescription: farmDescription || '',
         latitude: parseFloat(latitude),
@@ -77,12 +78,63 @@ const authController = {
       console.log('======================================================\n');
 
       return res.status(201).json({
-        message: 'Registration successful! Verification code sent to email (simulated).',
+        message: 'Farmer registration successful! Verification code sent to email (simulated).',
         email
       });
     } catch (error) {
       console.error('Registration error:', error);
-      return res.status(500).json({ message: 'Server error during registration.' });
+      return res.status(500).json({ message: 'Server error during farmer registration.' });
+    }
+  },
+
+  // @desc    Register a new consumer (buyer)
+  // @route   POST /api/auth/register-consumer
+  registerConsumer: async (req, res) => {
+    try {
+      const { username, email, password, phone, address } = req.body;
+
+      if (!username || !email || !password || !phone || !address) {
+        return res.status(400).json({ message: 'Please fill all required fields.' });
+      }
+
+      const emailExists = await dbEngine.findUserByEmail(email);
+      if (emailExists) {
+        return res.status(400).json({ message: 'An account with this email already exists.' });
+      }
+
+      const usernameExists = await dbEngine.findUserByUsername(username);
+      if (usernameExists) {
+        return res.status(400).json({ message: 'Username is already taken.' });
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      const newUser = await dbEngine.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        phone,
+        address,
+        role: 'consumer',
+        isVerified: true // Consumers are verified automatically
+      });
+
+      return res.status(201).json({
+        message: 'Consumer account created successfully!',
+        token: generateToken(newUser._id),
+        user: {
+          id: newUser._id,
+          username: newUser.username,
+          email: newUser.email,
+          phone: newUser.phone,
+          address: newUser.address,
+          role: 'consumer'
+        }
+      });
+    } catch (error) {
+      console.error('Consumer registration error:', error);
+      return res.status(500).json({ message: 'Server error during consumer registration.' });
     }
   },
 
@@ -98,14 +150,13 @@ const authController = {
 
       const user = await dbEngine.findUserByEmail(email);
       if (!user) {
-        return res.status(404).json({ message: 'Farmer not found.' });
+        return res.status(404).json({ message: 'User not found.' });
       }
 
       if (user.isVerified) {
         return res.status(400).json({ message: 'Email is already verified.' });
       }
 
-      // Check OTP and Expiry
       if (user.otp !== otp) {
         return res.status(400).json({ message: 'Invalid verification code.' });
       }
@@ -115,7 +166,6 @@ const authController = {
         return res.status(400).json({ message: 'Verification code has expired. Please request a new one.' });
       }
 
-      // Update user verification state
       const updatedUser = await dbEngine.updateUser(user._id, {
         isVerified: true,
         otp: null,
@@ -129,6 +179,7 @@ const authController = {
           id: updatedUser._id,
           username: updatedUser.username,
           email: updatedUser.email,
+          role: updatedUser.role || 'farmer',
           farmName: updatedUser.farmName,
           phone: updatedUser.phone,
           address: updatedUser.address,
@@ -155,7 +206,7 @@ const authController = {
 
       const user = await dbEngine.findUserByEmail(email);
       if (!user) {
-        return res.status(404).json({ message: 'Farmer not found.' });
+        return res.status(404).json({ message: 'User not found.' });
       }
 
       if (user.isVerified) {
@@ -163,14 +214,13 @@ const authController = {
       }
 
       const otp = generateOTP();
-      const otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
+      const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
 
       await dbEngine.updateUser(user._id, {
         otp,
         otpExpires: otpExpires.toISOString()
       });
 
-      // Output Simulated OTP to terminal
       console.log('\n======================================================');
       console.log(`[OTP SIMULATION] New email verification code for ${email}`);
       console.log(`CODE: ${otp}`);
@@ -186,17 +236,16 @@ const authController = {
     }
   },
 
-  // @desc    Login farmer
+  // @desc    Login farmer or consumer
   // @route   POST /api/auth/login
   login: async (req, res) => {
     try {
-      const { identifier, password } = req.body; // identifier can be username or email
+      const { identifier, password } = req.body;
 
       if (!identifier || !password) {
         return res.status(400).json({ message: 'Please enter all fields.' });
       }
 
-      // Check user by username or email
       let user = await dbEngine.findUserByEmail(identifier);
       if (!user) {
         user = await dbEngine.findUserByUsername(identifier);
@@ -206,15 +255,15 @@ const authController = {
         return res.status(400).json({ message: 'Invalid credentials.' });
       }
 
-      // Compare password
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return res.status(400).json({ message: 'Invalid credentials.' });
       }
 
-      // Check if user is verified
-      if (!user.isVerified) {
-        // Automatically trigger a resend of OTP so they can verify immediately
+      const role = user.role || 'farmer';
+
+      // Check verification for farmers
+      if (role === 'farmer' && !user.isVerified) {
         const otp = generateOTP();
         const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
         
@@ -241,12 +290,13 @@ const authController = {
           id: user._id,
           username: user.username,
           email: user.email,
-          farmName: user.farmName,
+          role: role,
+          farmName: user.farmName || '',
           phone: user.phone,
           address: user.address,
           latitude: user.latitude,
           longitude: user.longitude,
-          farmDescription: user.farmDescription
+          farmDescription: user.farmDescription || ''
         }
       });
     } catch (error) {
@@ -255,16 +305,16 @@ const authController = {
     }
   },
 
-  // @desc    Update farmer profile
+  // @desc    Update profile
   // @route   PUT /api/auth/profile
   updateProfile: async (req, res) => {
     try {
       const { farmName, phone, address, farmDescription, latitude, longitude } = req.body;
-      const farmerId = req.user._id;
+      const userId = req.user._id;
 
-      const user = await dbEngine.findUserById(farmerId);
+      const user = await dbEngine.findUserById(userId);
       if (!user) {
-        return res.status(404).json({ message: 'Farmer not found.' });
+        return res.status(404).json({ message: 'User not found.' });
       }
 
       const updateData = {};
@@ -275,7 +325,7 @@ const authController = {
       if (latitude !== undefined) updateData.latitude = parseFloat(latitude);
       if (longitude !== undefined) updateData.longitude = parseFloat(longitude);
 
-      const updatedUser = await dbEngine.updateUser(farmerId, updateData);
+      const updatedUser = await dbEngine.updateUser(userId, updateData);
 
       return res.status(200).json({
         message: 'Profile updated successfully!',
@@ -283,12 +333,13 @@ const authController = {
           id: updatedUser._id,
           username: updatedUser.username,
           email: updatedUser.email,
-          farmName: updatedUser.farmName,
+          role: updatedUser.role || 'farmer',
+          farmName: updatedUser.farmName || '',
           phone: updatedUser.phone,
           address: updatedUser.address,
           latitude: updatedUser.latitude,
           longitude: updatedUser.longitude,
-          farmDescription: updatedUser.farmDescription
+          farmDescription: updatedUser.farmDescription || ''
         }
       });
     } catch (error) {

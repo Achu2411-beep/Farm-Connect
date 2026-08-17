@@ -20,10 +20,11 @@ const protect = async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         address: user.address,
-        farmName: user.farmName,
-        farmDescription: user.farmDescription,
-        latitude: user.latitude,
-        longitude: user.longitude,
+        role: user.role || 'farmer',
+        farmName: user.farmName || '',
+        farmDescription: user.farmDescription || '',
+        latitude: user.latitude || 0,
+        longitude: user.longitude || 0,
         isVerified: user.isVerified
       };
       
