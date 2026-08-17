@@ -31,6 +31,12 @@ const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 const productRoutes = require('./routes/productRoutes');
 app.use('/api/products', productRoutes);
+const farmRoutes = require('./routes/farmRoutes');
+app.use('/api/farms', farmRoutes);
+const orderRoutes = require('./routes/orderRoutes');
+app.use('/api/orders', orderRoutes);
+const reviewRoutes = require('./routes/reviewRoutes');
+app.use('/api/reviews', reviewRoutes);
 
 // Start Server after attempting DB connection
 const startServer = async () => {
