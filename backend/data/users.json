@@ -1,0 +1,58 @@
+[
+  {
+    "_id": "farm_001",
+    "username": "greenvalley",
+    "email": "greenvalley@farmconnect.org",
+    "password": "\\/EcqjmEodYk7BMDEm7OXgBr3VQ8R/Qv51V1l0R3V9rqNtWEsxu",
+    "phone": "+91 98765 43210",
+    "address": "Green Valley Agro Farm, Perinthalmanna, Kerala",
+    "role": "farmer",
+    "farmName": "Green Valley Organic Farm",
+    "farmDescription": "Fresh pesticide-free organic vegetables, leafy greens, and farm-fresh dairy direct from our fields to your table.",
+    "latitude": 10.9755,
+    "longitude": 76.224,
+    "isVerified": true,
+    "createdAt": "2026-08-01T10:00:00.000Z"
+  },
+  {
+    "_id": "farm_002",
+    "username": "sunriseproduce",
+    "email": "sunrise@farmconnect.org",
+    "password": "\\/EcqjmEodYk7BMDEm7OXgBr3VQ8R/Qv51V1l0R3V9rqNtWEsxu",
+    "phone": "+91 94470 12345",
+    "address": "Sunrise Agro Orchard, Angadipuram, Kerala",
+    "role": "farmer",
+    "farmName": "Sunrise Fresh Agri-Farm",
+    "farmDescription": "Specializing in high-altitude organic fruits, wild honey, and natural spices grown using traditional zero-chemical farming techniques.",
+    "latitude": 10.982,
+    "longitude": 76.211,
+    "isVerified": true,
+    "createdAt": "2026-08-03T11:30:00.000Z"
+  },
+  {
+    "_id": "farm_003",
+    "username": "highlandeco",
+    "email": "highland@farmconnect.org",
+    "password": "\\/EcqjmEodYk7BMDEm7OXgBr3VQ8R/Qv51V1l0R3V9rqNtWEsxu",
+    "phone": "+91 91234 56789",
+    "address": "Highland Eco Farm Stand, Malappuram, Kerala",
+    "role": "farmer",
+    "farmName": "Highland Eco Produce",
+    "farmDescription": "Sustainable permaculture farm producing free-range eggs, organic tubers, cassava, and seasonal tropical fruits.",
+    "latitude": 11.0734,
+    "longitude": 76.074,
+    "isVerified": true,
+    "createdAt": "2026-08-05T14:15:00.000Z"
+  },
+  {
+    "_id": "consumer_demo",
+    "username": "buyer1",
+    "email": "buyer@farmconnect.org",
+    "password": "\\/EcqjmEodYk7BMDEm7OXgBr3VQ8R/Qv51V1l0R3V9rqNtWEsxu",
+    "phone": "+91 99887 76655",
+    "address": "Town Square, Perinthalmanna",
+    "role": "consumer",
+    "isVerified": true,
+    "createdAt": "2026-08-07T09:00:00.000Z"
+  }
+]

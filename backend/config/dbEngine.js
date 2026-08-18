@@ -48,7 +48,18 @@ const generateId = () => {
 };
 
 const dbEngine = {
+  getIsConnected: () => getIsConnected(),
+
   // Users
+  findAllFarmers: async () => {
+    if (getIsConnected()) {
+      return await User.find({ isVerified: true, role: 'farmer' }).select('-password -otp -otpExpires');
+    } else {
+      const users = readJSON(USERS_FILE);
+      return users.filter(u => (u.isVerified === true || u.isVerified === 'true') && (u.role === 'farmer' || u.farmName));
+    }
+  },
+
   findUserByEmail: async (email) => {
     if (getIsConnected()) {
       return await User.findOne({ email });

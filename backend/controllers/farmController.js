@@ -6,22 +6,7 @@ const farmController = {
   getAllFarms: async (req, res) => {
     try {
       // Fetch users with role === 'farmer' and isVerified === true
-      let farmers = [];
-      if (typeof dbEngine.getIsConnected === 'function' && dbEngine.getIsConnected()) {
-        const User = require('../models/User');
-        farmers = await User.find({ isVerified: true, role: 'farmer' }).select('-password -otp -otpExpires');
-      } else {
-        // Fallback JSON DB mode
-        const fs = require('fs');
-        const path = require('path');
-        const usersFile = path.join(__dirname, '../data/users.json');
-        try {
-          const data = JSON.parse(fs.readFileSync(usersFile, 'utf8'));
-          farmers = data.filter(u => u.isVerified && (u.role === 'farmer' || u.farmName));
-        } catch (err) {
-          farmers = [];
-        }
-      }
+      const farmers = await dbEngine.findAllFarmers();
 
       // Map to clean farm object representation
       const farmsList = farmers.map(f => ({

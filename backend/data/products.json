@@ -1,0 +1,57 @@
+[
+  {
+    "_id": "prod_001",
+    "farmerId": "farm_001",
+    "title": "Organic Tomatoes",
+    "category": "Vegetables",
+    "unit": "kg",
+    "price": 45,
+    "stock": 50,
+    "description": "Vine-ripened pesticide-free red tomatoes.",
+    "createdAt": "2026-08-02T08:00:00.000Z"
+  },
+  {
+    "_id": "prod_002",
+    "farmerId": "farm_001",
+    "title": "Fresh Spinach (Palak)",
+    "category": "Vegetables",
+    "unit": "bunch",
+    "price": 25,
+    "stock": 30,
+    "description": "Freshly harvested crisp organic spinach leaves.",
+    "createdAt": "2026-08-02T08:15:00.000Z"
+  },
+  {
+    "_id": "prod_003",
+    "farmerId": "farm_002",
+    "title": "Pure Forest Honey",
+    "category": "Grains & Flours",
+    "unit": "piece",
+    "price": 350,
+    "stock": 15,
+    "description": "Raw, unheated wild forest honey collected naturally.",
+    "createdAt": "2026-08-04T09:00:00.000Z"
+  },
+  {
+    "_id": "prod_004",
+    "farmerId": "farm_002",
+    "title": "Organic Bananas (Nendran)",
+    "category": "Fruits",
+    "unit": "kg",
+    "price": 60,
+    "stock": 40,
+    "description": "Sweet local plantains grown organically.",
+    "createdAt": "2026-08-04T09:30:00.000Z"
+  },
+  {
+    "_id": "prod_005",
+    "farmerId": "farm_003",
+    "title": "Country Eggs (Free-Range)",
+    "category": "Dairy & Eggs",
+    "unit": "dozen",
+    "price": 90,
+    "stock": 20,
+    "description": "Nutritious eggs from free-range pasture-raised hens.",
+    "createdAt": "2026-08-06T10:00:00.000Z"
+  }
+]
