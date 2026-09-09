@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingBag, Clock, CheckCircle, Truck, Package, MapPin, Store, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, Clock, CheckCircle, Truck, Package, MapPin, Store, ArrowLeft, KeyRound, ShieldCheck } from 'lucide-react';
 
 const MyOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -144,6 +142,47 @@ const MyOrders = () => {
                       </div>
                     ))}
                   </div>
+
+                  {/* Delivery Handover OTP Box */}
+                  {order.status !== 'Delivered' && order.status !== 'Cancelled' && order.deliveryOtp && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                      border: '1.5px solid #86efac',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.85rem 1.25rem',
+                      marginBottom: '1.25rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '0.75rem'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <ShieldCheck size={22} style={{ color: 'var(--primary-medium)', flexShrink: 0 }} />
+                        <div>
+                          <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--primary-deep)' }}>
+                            Direct Delivery Handover Code:
+                          </strong>
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            Share this 4-digit code with the farmer upon receiving your items.
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{
+                        background: 'var(--primary-deep)',
+                        color: 'white',
+                        fontFamily: 'monospace',
+                        fontSize: '1.4rem',
+                        fontWeight: '800',
+                        letterSpacing: '0.2em',
+                        padding: '0.3rem 0.8rem',
+                        borderRadius: '6px',
+                        boxShadow: 'var(--shadow-sm)'
+                      }}>
+                        {order.deliveryOtp}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Delivery & Footer */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed #e2e8f0', paddingTop: '1rem', fontSize: '0.85rem', flexWrap: 'wrap', gap: '1rem' }}>

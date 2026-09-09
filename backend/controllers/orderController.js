@@ -87,6 +87,9 @@ const orderController = {
         const itemsSubtotal = group.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
         const totalAmount = itemsSubtotal + deliveryFee;
 
+        // Generate 4-digit Delivery Handover OTP
+        const deliveryOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
         const orderObj = {
           consumerId,
           consumerName,
@@ -99,6 +102,7 @@ const orderController = {
           deliveryFee: deliveryFee,
           consumerLatitude: consumerLat ? parseFloat(consumerLat) : undefined,
           consumerLongitude: consumerLng ? parseFloat(consumerLng) : undefined,
+          deliveryOtp: deliveryOtp,
           totalAmount: parseFloat(totalAmount.toFixed(2)),
           paymentMethod: paymentMethod || 'COD',
           paymentStatus: paymentMethod === 'UPI' ? 'Paid' : 'Pending',
@@ -150,7 +154,7 @@ const orderController = {
   updateOrderStatus: async (req, res) => {
     try {
       const orderId = req.params.id;
-      const { status } = req.body;
+      const { status, deliveryOtp } = req.body;
       const farmerId = req.user._id;
 
       const order = await dbEngine.findOrderById(orderId);
@@ -162,7 +166,19 @@ const orderController = {
         return res.status(401).json({ message: 'Not authorized to update this order.' });
       }
 
-      const updatedOrder = await dbEngine.updateOrderStatus(orderId, status);
+      const extraFields = {};
+
+      // If marking as Delivered, verify 4-digit Delivery Handover OTP
+      if (status === 'Delivered') {
+        if (!deliveryOtp || deliveryOtp.toString().trim() !== (order.deliveryOtp || '').toString().trim()) {
+          return res.status(400).json({
+            message: 'Invalid 4-digit Delivery OTP! Please ask the consumer for their handover verification code upon delivery.'
+          });
+        }
+        extraFields.paymentStatus = 'Paid';
+      }
+
+      const updatedOrder = await dbEngine.updateOrderStatus(orderId, status, extraFields);
       return res.status(200).json({ message: 'Order status updated successfully!', order: updatedOrder });
     } catch (error) {
       console.error('Update order status error:', error);

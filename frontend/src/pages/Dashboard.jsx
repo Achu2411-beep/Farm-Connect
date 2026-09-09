@@ -36,6 +36,12 @@ const Dashboard = ({ user, setUser }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
 
+  // Delivery OTP Modal States
+  const [otpModalOrder, setOtpModalOrder] = useState(null);
+  const [enteredOtp, setEnteredOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+
   // Add/Edit Product Form States
   const [productForm, setProductForm] = useState({
     title: '',
@@ -124,12 +130,20 @@ const Dashboard = ({ user, setUser }) => {
   };
 
   // Update order status (Farmer action)
-  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+  const handleUpdateOrderStatus = async (order, newStatus) => {
+    if (newStatus === 'Delivered') {
+      // Open 4-digit Delivery Handover OTP Modal
+      setOtpModalOrder(order);
+      setEnteredOtp('');
+      setOtpError('');
+      return;
+    }
+
     const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      const response = await fetch(`http://localhost:5000/api/orders/${order._id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -147,6 +161,40 @@ const Dashboard = ({ user, setUser }) => {
       fetchFarmerOrders();
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  // Submit & verify 4-digit Delivery Handover OTP
+  const handleVerifyAndDeliver = async (e) => {
+    e.preventDefault();
+    if (!otpModalOrder) return;
+    setOtpError('');
+    setOtpLoading(true);
+
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`http://localhost:5000/api/orders/${otpModalOrder._id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: 'Delivered',
+          deliveryOtp: enteredOtp
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Verification failed.');
+
+      setOtpModalOrder(null);
+      setEnteredOtp('');
+      fetchFarmerOrders();
+    } catch (err) {
+      setOtpError(err.message);
+    } finally {
+      setOtpLoading(false);
     }
   };
 
@@ -583,7 +631,7 @@ const Dashboard = ({ user, setUser }) => {
                             <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)' }}>Status:</span>
                             <select
                               value={order.status}
-                              onChange={(e) => handleUpdateOrderStatus(order._id, e.target.value)}
+                              onChange={(e) => handleUpdateOrderStatus(order, e.target.value)}
                               style={{
                                 padding: '0.4rem 0.8rem',
                                 borderRadius: '6px',
@@ -682,10 +730,75 @@ const Dashboard = ({ user, setUser }) => {
                 <div className="form-group"><label className="form-label">Stock *</label><input type="number" name="stock" className="form-input" value={productForm.stock} onChange={handleProductFormChange} required /></div>
               </div>
               <div className="form-group"><label className="form-label">Description</label><textarea name="description" className="form-input" value={productForm.description} onChange={handleProductFormChange} rows="2" /></div>
-              <div className="form-group"><label className="form-label">Product Image</label><input type="file" accept="image/*" onChange={handleImageChange} /></div>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="btn btn-secondary">Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={formLoading}>{formLoading ? 'Saving...' : 'Save Product'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4-DIGIT DELIVERY HANDOVER OTP MODAL */}
+      {otpModalOrder && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '460px', textAlign: 'center' }}>
+            <button className="modal-close" onClick={() => setOtpModalOrder(null)}><X size={20} /></button>
+            
+            <div style={{
+              display: 'inline-flex',
+              background: 'var(--primary-pale)',
+              color: 'var(--primary-medium)',
+              padding: '1rem',
+              borderRadius: '50%',
+              marginBottom: '1rem'
+            }}>
+              <ShieldCheck size={40} />
+            </div>
+
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.4rem', color: 'var(--primary-deep)' }}>
+              Verify Delivery Handover
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              Ask consumer <strong>{otpModalOrder.consumerName}</strong> for their 4-digit Delivery OTP code upon handing over the produce.
+            </p>
+
+            {otpError && (
+              <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '600', marginBottom: '1.25rem', border: '1px solid #fca5a5' }}>
+                {otpError}
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyAndDeliver}>
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label className="form-label">Enter 4-Digit Delivery OTP *</label>
+                <input
+                  type="text"
+                  maxLength="4"
+                  placeholder="0000"
+                  className="form-input"
+                  value={enteredOtp}
+                  onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
+                  style={{
+                    textAlign: 'center',
+                    fontSize: '2rem',
+                    letterSpacing: '0.4em',
+                    fontFamily: 'monospace',
+                    fontWeight: '800',
+                    padding: '0.6rem'
+                  }}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <button type="button" onClick={() => setOtpModalOrder(null)} className="btn btn-secondary" style={{ width: '45%' }}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={otpLoading || enteredOtp.length !== 4} style={{ width: '55%' }}>
+                  {otpLoading ? 'Verifying...' : 'Verify & Complete'}
+                </button>
               </div>
             </form>
           </div>

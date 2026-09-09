@@ -243,14 +243,14 @@ const dbEngine = {
     }
   },
 
-  updateOrderStatus: async (id, status) => {
+  updateOrderStatus: async (id, status, extraFields = {}) => {
     if (getIsConnected()) {
-      return await Order.findByIdAndUpdate(id, { status }, { new: true });
+      return await Order.findByIdAndUpdate(id, { status, ...extraFields }, { new: true });
     } else {
       const orders = readJSON(ORDERS_FILE);
       const index = orders.findIndex(o => o._id === id);
       if (index !== -1) {
-        orders[index].status = status;
+        orders[index] = { ...orders[index], status, ...extraFields };
         writeJSON(ORDERS_FILE, orders);
         return orders[index];
       }
