@@ -209,6 +209,9 @@ const FarmStorefront = () => {
               <span style={{ background: 'rgba(255,255,255,0.15)', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
                 <Sprout size={14} style={{ color: 'var(--primary-light)' }} /> Direct Partner Storefront
               </span>
+              <span style={{ background: 'rgba(255,255,255,0.2)', color: '#a7f3d0', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: '700' }}>
+                🚚 Max Delivery Radius: {farm.maxDeliveryRadius !== undefined ? farm.maxDeliveryRadius : 15} km
+              </span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(245, 158, 11, 0.25)', color: '#fde047', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: '800' }}>
                 <Star size={14} fill="#fde047" /> {avgRating} ({reviews.length} {reviews.length === 1 ? 'Review' : 'Reviews'})
               </span>

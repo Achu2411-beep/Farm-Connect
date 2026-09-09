@@ -14,7 +14,8 @@ const Dashboard = ({ user, setUser }) => {
     address: '',
     farmDescription: '',
     latitude: '',
-    longitude: ''
+    longitude: '',
+    maxDeliveryRadius: '15'
   });
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
@@ -62,7 +63,8 @@ const Dashboard = ({ user, setUser }) => {
       address: user.address || '',
       farmDescription: user.farmDescription || '',
       latitude: user.latitude !== undefined ? user.latitude.toString() : '10.850500',
-      longitude: user.longitude !== undefined ? user.longitude.toString() : '76.271100'
+      longitude: user.longitude !== undefined ? user.longitude.toString() : '76.271100',
+      maxDeliveryRadius: user.maxDeliveryRadius !== undefined ? user.maxDeliveryRadius.toString() : '15'
     });
   }, [user, navigate]);
 
@@ -179,14 +181,15 @@ const Dashboard = ({ user, setUser }) => {
           address: profileData.address,
           farmDescription: profileData.farmDescription,
           latitude: parseFloat(profileData.latitude),
-          longitude: parseFloat(profileData.longitude)
+          longitude: parseFloat(profileData.longitude),
+          maxDeliveryRadius: parseFloat(profileData.maxDeliveryRadius)
         })
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Failed to update profile.');
 
-      setProfileSuccess('Profile and coordinates updated successfully!');
+      setProfileSuccess('Profile and delivery radius updated successfully!');
       
       const updatedUser = {
         ...user,
@@ -195,7 +198,8 @@ const Dashboard = ({ user, setUser }) => {
         address: data.user.address,
         farmDescription: data.user.farmDescription,
         latitude: data.user.latitude,
-        longitude: data.user.longitude
+        longitude: data.user.longitude,
+        maxDeliveryRadius: data.user.maxDeliveryRadius
       };
       
       setUser(updatedUser);
@@ -464,6 +468,12 @@ const Dashboard = ({ user, setUser }) => {
                   <div className="form-group">
                     <label className="form-label">Physical Address</label>
                     <input type="text" name="address" className="form-input" value={profileData.address} onChange={handleInputChange} required />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Max Direct Delivery Radius (km)</label>
+                    <input type="number" name="maxDeliveryRadius" className="form-input" min="1" max="100" step="0.5" value={profileData.maxDeliveryRadius} onChange={handleInputChange} required placeholder="e.g. 15" />
+                    <small style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Maximum distance in kilometers your farm will directly deliver to consumers.</small>
                   </div>
 
                   <div className="form-group">

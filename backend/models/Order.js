@@ -17,6 +17,10 @@ const OrderSchema = new mongoose.Schema({
     }
   ],
   totalAmount: { type: Number, required: true },
+  deliveryDistance: { type: Number, default: 0 },
+  deliveryFee: { type: Number, default: 0 },
+  consumerLatitude: { type: Number },
+  consumerLongitude: { type: Number },
   paymentMethod: { type: String, enum: ['COD', 'UPI'], default: 'COD' },
   paymentStatus: { type: String, enum: ['Pending', 'Paid'], default: 'Pending' },
   status: { type: String, enum: ['Pending', 'Confirmed', 'Out for Delivery', 'Delivered', 'Cancelled'], default: 'Pending' },

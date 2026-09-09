@@ -3,12 +3,27 @@ import { Link } from 'react-router-dom';
 import L from 'leaflet';
 import { MapPin, Search, Store, Phone, ArrowRight, Sprout } from 'lucide-react';
 
+// Haversine distance helper
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c * 10) / 10;
+};
+
 const ExploreFarms = () => {
   const [farms, setFarms] = useState([]);
   const [filteredFarms, setFilteredFarms] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userLocation, setUserLocation] = useState(null);
 
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -16,6 +31,13 @@ const ExploreFarms = () => {
 
   useEffect(() => {
     fetchFarms();
+    // Try auto detecting consumer geolocation
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => console.log('Geolocation permission denied or unavailable.')
+      );
+    }
   }, []);
 
   const fetchFarms = async () => {
@@ -233,10 +255,36 @@ const ExploreFarms = () => {
                       </div>
                     </div>
 
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '0.4rem' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'flex-start', gap: '0.4rem' }}>
                       <MapPin size={16} style={{ flexShrink: 0, marginTop: '3px', color: 'var(--primary-medium)' }} />
                       {farm.address}
                     </p>
+
+                    {/* Distance & Delivery Radius Badges */}
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                      {userLocation && farm.latitude && farm.longitude && (() => {
+                        const dist = calculateDistance(userLocation.lat, userLocation.lng, farm.latitude, farm.longitude);
+                        const maxRadius = farm.maxDeliveryRadius !== undefined ? farm.maxDeliveryRadius : 15;
+                        const isDeliverable = dist !== null && dist <= maxRadius;
+                        return (
+                          <span style={{
+                            background: isDeliverable ? 'var(--primary-pale)' : '#fee2e2',
+                            color: isDeliverable ? 'var(--primary-medium)' : '#dc2626',
+                            padding: '0.25rem 0.6rem',
+                            borderRadius: '50px',
+                            fontSize: '0.75rem',
+                            fontWeight: '700'
+                          }}>
+                            📍 {dist} km away {isDeliverable ? `• Delivers within ${maxRadius}km` : `• Exceeds ${maxRadius}km Radius`}
+                          </span>
+                        );
+                      })()}
+                      {(!userLocation || !farm.latitude || !farm.longitude) && (
+                        <span style={{ background: '#f1f5f9', color: 'var(--text-muted)', padding: '0.25rem 0.6rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: '600' }}>
+                          🚚 Direct Delivery Radius: {farm.maxDeliveryRadius !== undefined ? farm.maxDeliveryRadius : 15} km
+                        </span>
+                      )}
+                    </div>
 
                     {farm.farmDescription && (
                       <p style={{ color: 'var(--text-dark)', fontSize: '0.85rem', lineHeight: '1.5', marginBottom: '1.5rem', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>

@@ -81,11 +81,11 @@ const LandingPage = () => {
             gap: '1rem',
             justifyContent: 'center'
           }}>
-            <Link to="/register" className="btn btn-primary" style={{ fontSize: '1.05rem', padding: '1rem 2.2rem' }}>
-              Register Your Farm <ArrowRight size={18} />
+            <Link to="/farms" className="btn btn-primary" style={{ fontSize: '1.05rem', padding: '1rem 2.2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              <MapPin size={20} /> Explore Local Farms
             </Link>
-            <Link to="/login" className="btn btn-secondary" style={{ fontSize: '1.05rem', padding: '1rem 2.2rem' }}>
-              Farmer Dashboard Login
+            <Link to="/register" className="btn btn-secondary" style={{ fontSize: '1.05rem', padding: '1rem 2.2rem' }}>
+              Register Your Farm
             </Link>
           </div>
         </div>
@@ -222,16 +222,15 @@ const LandingPage = () => {
             Set up your farm profile in minutes. Start listing your organic vegetables, fruits, dairy, or fresh poultry and connect directly with local neighborhoods.
           </p>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link to="/register" className="btn btn-accent" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '700' }}>
-              Get Started Now <ArrowRight size={16} />
+            <Link to="/farms" className="btn btn-accent" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '700' }}>
+              Explore Nearby Farms <ArrowRight size={16} />
             </Link>
-            <Link to="/login" className="btn btn-secondary" style={{
+            <Link to="/register" className="btn btn-secondary" style={{
               background: 'transparent',
               color: 'white',
-              borderColor: 'rgba(255,255,255,0.3)',
-              hover: { background: 'white' }
+              borderColor: 'rgba(255,255,255,0.3)'
             }}>
-              Farmer Portal
+              Register Your Farm
             </Link>
           </div>
         </div>

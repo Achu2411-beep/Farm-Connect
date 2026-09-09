@@ -20,6 +20,9 @@ function Navigation({ user, logout }) {
   const location = useLocation();
   const { totalCount } = useCart();
 
+  // Show Cart in navbar only if user is a consumer, cart has items, or browsing shop pages (hidden on intro landing page for guests with empty cart)
+  const showCart = user?.role === 'consumer' || totalCount > 0 || (location.pathname !== '/' && user?.role !== 'farmer');
+
   return (
     <nav className="navbar">
       <Link to="/" className="logo">
@@ -33,31 +36,33 @@ function Navigation({ user, logout }) {
             Explore Farms
           </Link>
         </li>
-        <li>
-          <Link to="/cart" className={`nav-link ${location.pathname === '/cart' ? 'active' : ''}`} style={{ position: 'relative' }}>
-            <ShoppingCart size={18} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-            Cart
-            {totalCount > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '-8px',
-                right: '-12px',
-                background: 'var(--accent-clay)',
-                color: 'white',
-                fontSize: '0.75rem',
-                fontWeight: '800',
-                borderRadius: '50%',
-                width: '18px',
-                height: '18px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                {totalCount}
-              </span>
-            )}
-          </Link>
-        </li>
+        {showCart && (
+          <li>
+            <Link to="/cart" className={`nav-link ${location.pathname === '/cart' ? 'active' : ''}`} style={{ position: 'relative' }}>
+              <ShoppingCart size={18} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+              Cart
+              {totalCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-12px',
+                  background: 'var(--accent-clay)',
+                  color: 'white',
+                  fontSize: '0.75rem',
+                  fontWeight: '800',
+                  borderRadius: '50%',
+                  width: '18px',
+                  height: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {totalCount}
+                </span>
+              )}
+            </Link>
+          </li>
+        )}
 
         {user ? (
           <>

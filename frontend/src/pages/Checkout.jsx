@@ -3,6 +3,28 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { ShoppingBag, MapPin, Phone, User, CheckCircle, ArrowRight, QrCode, CreditCard, ShieldCheck } from 'lucide-react';
 
+// Haversine distance helper (km)
+const calculateHaversine = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c * 10) / 10;
+};
+
+const calculateFeeForDistance = (distance) => {
+  if (distance === null || distance <= 0) return 20;
+  if (distance <= 3) return 15;
+  if (distance <= 7) return 30;
+  if (distance <= 15) return 50;
+  return 50 + Math.ceil(distance - 15) * 10;
+};
+
 const Checkout = () => {
   const { cart, clearCart, totalAmount } = useCart();
   const navigate = useNavigate();
@@ -14,11 +36,12 @@ const Checkout = () => {
     paymentMethod: 'COD' // 'COD' or 'UPI'
   });
 
+  const [consumerCoords, setConsumerCoords] = useState({ lat: null, lng: null });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(null);
 
-  // Load user details if logged in
+  // Load user details & try detecting browser location
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -29,11 +52,49 @@ const Checkout = () => {
         phone: u.phone || '',
         deliveryAddress: u.address || ''
       }));
+      if (u.latitude && u.longitude) {
+        setConsumerCoords({ lat: parseFloat(u.latitude), lng: parseFloat(u.longitude) });
+      }
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setConsumerCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => console.log('Location access not granted for distance calculation.')
+      );
     }
   }, []);
 
-  const deliveryFee = cart.length > 0 ? 30 : 0;
-  const grandTotal = totalAmount + deliveryFee;
+  // Calculate distance & dynamic delivery fee for each unique farm in cart
+  const farmBreakdown = {};
+  cart.forEach(item => {
+    const farmerId = item.farm._id || item.farm.id;
+    if (!farmBreakdown[farmerId]) {
+      const farmLat = item.farm.latitude;
+      const farmLng = item.farm.longitude;
+      const dist = (consumerCoords.lat && consumerCoords.lng && farmLat && farmLng)
+        ? calculateHaversine(farmLat, farmLng, consumerCoords.lat, consumerCoords.lng)
+        : null;
+      const maxRadius = item.farm.maxDeliveryRadius !== undefined ? item.farm.maxDeliveryRadius : 15;
+      const fee = calculateFeeForDistance(dist);
+      const isExceeded = dist !== null && dist > maxRadius;
+
+      farmBreakdown[farmerId] = {
+        farmName: item.farm.farmName || 'Local Farm',
+        distance: dist,
+        maxRadius: maxRadius,
+        fee: fee,
+        isExceeded: isExceeded
+      };
+    }
+  });
+
+  const totalDeliveryFee = Object.values(farmBreakdown).reduce((sum, f) => sum + f.fee, 0);
+  const grandTotal = totalAmount + totalDeliveryFee;
+
+  const hasExceededRadius = Object.values(farmBreakdown).some(f => f.isExceeded);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -46,6 +107,12 @@ const Checkout = () => {
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (hasExceededRadius) {
+      setError('Cannot place order: One or more farms exceed their direct delivery radius for your location.');
+      return;
+    }
+
     setLoading(true);
 
     const token = localStorage.getItem('token');
@@ -72,7 +139,9 @@ const Checkout = () => {
           items: cart,
           deliveryAddress: formData.deliveryAddress,
           phone: formData.phone,
-          paymentMethod: formData.paymentMethod
+          paymentMethod: formData.paymentMethod,
+          consumerLat: consumerCoords.lat,
+          consumerLng: consumerCoords.lng
         })
       });
 
@@ -302,9 +371,30 @@ const Checkout = () => {
                   <span>Items Subtotal ({cart.length} {cart.length === 1 ? 'item' : 'items'})</span>
                   <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>₹{totalAmount.toFixed(2)}</span>
                 </div>
+
+                {/* Per-Farm Delivery Breakdown */}
+                <div style={{ background: '#faf9f6', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', margin: '0.25rem 0' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--primary-deep)', display: 'block', marginBottom: '0.4rem' }}>
+                    🚚 Distance & Delivery Breakdown:
+                  </span>
+                  {Object.entries(farmBreakdown).map(([fId, info]) => (
+                    <div key={fId} style={{ fontSize: '0.8rem', marginBottom: '0.3rem', color: info.isExceeded ? '#dc2626' : 'var(--text-dark)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>🌾 {info.farmName} {info.distance !== null ? `(${info.distance} km)` : ''}</span>
+                        <strong>₹{info.fee.toFixed(2)}</strong>
+                      </div>
+                      {info.isExceeded && (
+                        <div style={{ color: '#dc2626', fontSize: '0.75rem', fontWeight: '700', marginTop: '2px' }}>
+                          ⚠️ Exceeds max delivery radius of {info.maxRadius} km!
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                  <span>Direct Delivery Fee</span>
-                  <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>₹{deliveryFee.toFixed(2)}</span>
+                  <span>Total Direct Delivery Fee</span>
+                  <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>₹{totalDeliveryFee.toFixed(2)}</span>
                 </div>
               </div>
 

@@ -296,6 +296,7 @@ const authController = {
           address: user.address,
           latitude: user.latitude,
           longitude: user.longitude,
+          maxDeliveryRadius: user.maxDeliveryRadius !== undefined ? user.maxDeliveryRadius : 15,
           farmDescription: user.farmDescription || ''
         }
       });
@@ -309,7 +310,7 @@ const authController = {
   // @route   PUT /api/auth/profile
   updateProfile: async (req, res) => {
     try {
-      const { farmName, phone, address, farmDescription, latitude, longitude } = req.body;
+      const { farmName, phone, address, farmDescription, latitude, longitude, maxDeliveryRadius } = req.body;
       const userId = req.user._id;
 
       const user = await dbEngine.findUserById(userId);
@@ -324,6 +325,7 @@ const authController = {
       if (farmDescription !== undefined) updateData.farmDescription = farmDescription;
       if (latitude !== undefined) updateData.latitude = parseFloat(latitude);
       if (longitude !== undefined) updateData.longitude = parseFloat(longitude);
+      if (maxDeliveryRadius !== undefined) updateData.maxDeliveryRadius = parseFloat(maxDeliveryRadius);
 
       const updatedUser = await dbEngine.updateUser(userId, updateData);
 
@@ -339,6 +341,7 @@ const authController = {
           address: updatedUser.address,
           latitude: updatedUser.latitude,
           longitude: updatedUser.longitude,
+          maxDeliveryRadius: updatedUser.maxDeliveryRadius !== undefined ? updatedUser.maxDeliveryRadius : 15,
           farmDescription: updatedUser.farmDescription || ''
         }
       });

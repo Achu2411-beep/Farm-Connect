@@ -11,6 +11,7 @@ const UserSchema = new mongoose.Schema({
   farmDescription: { type: String },
   latitude: { type: Number },
   longitude: { type: Number },
+  maxDeliveryRadius: { type: Number, default: 15 },
   isVerified: { type: Boolean, default: false },
   otp: { type: String },
   otpExpires: { type: Date },
