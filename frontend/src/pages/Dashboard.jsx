@@ -15,7 +15,7 @@ const Dashboard = ({ user, setUser }) => {
     farmDescription: '',
     latitude: '',
     longitude: '',
-    maxDeliveryRadius: '15'
+    maxDeliveryRadius: '100'
   });
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
@@ -70,15 +70,16 @@ const Dashboard = ({ user, setUser }) => {
       farmDescription: user.farmDescription || '',
       latitude: user.latitude !== undefined ? user.latitude.toString() : '10.850500',
       longitude: user.longitude !== undefined ? user.longitude.toString() : '76.271100',
-      maxDeliveryRadius: user.maxDeliveryRadius !== undefined ? user.maxDeliveryRadius.toString() : '15'
+      maxDeliveryRadius: user.maxDeliveryRadius !== undefined ? user.maxDeliveryRadius.toString() : '100'
     });
   }, [user, navigate]);
 
   // Fetch data when switching tabs
   useEffect(() => {
-    if (activeTab === 'inventory') {
+    if (activeTab === 'inventory' || activeTab === 'overview') {
       fetchProducts();
-    } else if (activeTab === 'orders') {
+    }
+    if (activeTab === 'orders' || activeTab === 'overview') {
       fetchFarmerOrders();
     }
   }, [activeTab]);
@@ -459,7 +460,7 @@ const Dashboard = ({ user, setUser }) => {
               <div>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Dashboard Overview</h2>
                 <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-                  Welcome back! Summary of your farm presence on Local Farm Connect.
+                  Welcome back! Summary of your farm presence on Farmley Connect.
                 </p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
@@ -486,6 +487,87 @@ const Dashboard = ({ user, setUser }) => {
                   <p style={{ color: user.farmDescription ? 'var(--text-dark)' : 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6' }}>
                     {user.farmDescription || 'No description listed yet. Head to "Farm Profile" to add details!'}
                   </p>
+                </div>
+
+                {/* Quick Products Overview with Edit Access */}
+                <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <div>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary-deep)', margin: 0 }}>
+                        Your Produce Listings ({products.length})
+                      </h3>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                        Quickly edit prices, adjust stock levels, or update produce info.
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button onClick={openAddModal} className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                        <Plus size={15} /> Add Produce
+                      </button>
+                      <button onClick={() => setActiveTab('inventory')} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                        Manage Inventory
+                      </button>
+                    </div>
+                  </div>
+
+                  {products.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', background: '#faf9f6', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
+                        You haven't listed any farm produce yet.
+                      </p>
+                      <button onClick={openAddModal} className="btn btn-primary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.85rem' }}>
+                        <Plus size={15} /> List Your First Harvest
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '1rem' }}>
+                      {products.slice(0, 6).map((product) => (
+                        <div key={product._id} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden', background: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 'var(--shadow-sm)' }}>
+                          <div>
+                            <div style={{ height: '110px', background: '#f1f5f9', overflow: 'hidden' }}>
+                              {product.image ? (
+                                <img src={`http://localhost:5000${product.image}`} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                                  <Camera size={26} />
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ padding: '0.75rem' }}>
+                              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 0.25rem 0', color: 'var(--primary-deep)' }}>{product.title}</h4>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                <strong style={{ color: 'var(--accent-clay)' }}>₹{product.price}/{product.unit}</strong>
+                                <span>Stock: <strong>{product.stock}</strong></span>
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(product)}
+                            className="btn btn-secondary"
+                            style={{
+                              width: '100%',
+                              borderRadius: 0,
+                              padding: '0.55rem',
+                              fontSize: '0.85rem',
+                              borderTop: '1px solid #e2e8f0',
+                              borderLeft: 'none',
+                              borderRight: 'none',
+                              borderBottom: 'none',
+                              color: 'var(--primary-medium)',
+                              fontWeight: 700,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.35rem'
+                            }}
+                          >
+                            <Edit size={14} /> Edit Produce
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -520,7 +602,7 @@ const Dashboard = ({ user, setUser }) => {
 
                   <div className="form-group">
                     <label className="form-label">Max Direct Delivery Radius (km)</label>
-                    <input type="number" name="maxDeliveryRadius" className="form-input" min="1" max="100" step="0.5" value={profileData.maxDeliveryRadius} onChange={handleInputChange} required placeholder="e.g. 15" />
+                    <input type="number" name="maxDeliveryRadius" className="form-input" min="1" max="100" step="0.5" value={profileData.maxDeliveryRadius} onChange={handleInputChange} required placeholder="e.g. 100" />
                     <small style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Maximum distance in kilometers your farm will directly deliver to consumers.</small>
                   </div>
 
@@ -580,9 +662,48 @@ const Dashboard = ({ user, setUser }) => {
                             </div>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', borderTop: '1px solid #f1f5f9' }}>
-                          <button onClick={() => openEditModal(product)} style={{ flex: 1, padding: '0.6rem', border: 'none', background: 'none', color: 'var(--primary-medium)', fontWeight: '600', cursor: 'pointer' }}>Edit</button>
-                          <button onClick={() => handleDeleteProduct(product._id)} style={{ flex: 1, padding: '0.6rem', border: 'none', background: 'none', color: '#dc2626', fontWeight: '600', cursor: 'pointer' }}>Delete</button>
+                        <div style={{ display: 'flex', borderTop: '1px solid #e2e8f0', background: '#faf9f6' }}>
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(product)}
+                            style={{
+                              flex: 1,
+                              padding: '0.75rem',
+                              border: 'none',
+                              background: 'transparent',
+                              color: 'var(--primary-medium)',
+                              fontWeight: '700',
+                              fontSize: '0.88rem',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.4rem',
+                              borderRight: '1px solid #e2e8f0'
+                            }}
+                          >
+                            <Edit size={16} /> Edit Product
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(product._id)}
+                            style={{
+                              flex: 1,
+                              padding: '0.75rem',
+                              border: 'none',
+                              background: 'transparent',
+                              color: '#dc2626',
+                              fontWeight: '700',
+                              fontSize: '0.88rem',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.4rem'
+                            }}
+                          >
+                            <Trash2 size={16} /> Delete
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -715,24 +836,81 @@ const Dashboard = ({ user, setUser }) => {
 
       {isEditModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content" style={{ maxWidth: '620px' }}>
             <button className="modal-close" onClick={() => setIsEditModalOpen(false)}><X size={20} /></button>
-            <h2>Edit Product</h2>
-            {formError && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.5rem', borderRadius: '6px', marginBottom: '1rem' }}>{formError}</div>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <Edit size={22} style={{ color: 'var(--primary-medium)' }} />
+              <h2 style={{ fontSize: '1.5rem', color: 'var(--primary-deep)', margin: 0 }}>Edit Produce Listing</h2>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.25rem' }}>
+              Update details, price, inventory stock, or photo for <strong>{currentProduct?.title}</strong>.
+            </p>
+
+            {formError && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.6rem 0.8rem', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.88rem', fontWeight: 600 }}>{formError}</div>}
+            
             <form onSubmit={handleSaveProduct}>
-              <div className="form-group"><label className="form-label">Title *</label><input type="text" name="title" className="form-input" value={productForm.title} onChange={handleProductFormChange} required /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="form-group"><label className="form-label">Category</label><select name="category" className="form-input" value={productForm.category} onChange={handleProductFormChange}><option value="Vegetables">Vegetables</option><option value="Fruits">Fruits</option><option value="Dairy & Eggs">Dairy & Eggs</option><option value="Grains & Flours">Grains & Flours</option></select></div>
-                <div className="form-group"><label className="form-label">Unit</label><select name="unit" className="form-input" value={productForm.unit} onChange={handleProductFormChange}><option value="kg">Per kg</option><option value="bunch">Per Bunch</option><option value="dozen">Per Dozen</option><option value="piece">Per Piece</option></select></div>
+              <div className="form-group">
+                <label className="form-label">Product Name / Harvest Title *</label>
+                <input type="text" name="title" className="form-input" value={productForm.title} onChange={handleProductFormChange} required />
               </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="form-group"><label className="form-label">Price (₹) *</label><input type="number" step="0.01" name="price" className="form-input" value={productForm.price} onChange={handleProductFormChange} required /></div>
-                <div className="form-group"><label className="form-label">Stock *</label><input type="number" name="stock" className="form-input" value={productForm.stock} onChange={handleProductFormChange} required /></div>
+                <div className="form-group">
+                  <label className="form-label">Category</label>
+                  <select name="category" className="form-input" value={productForm.category} onChange={handleProductFormChange}>
+                    <option value="Vegetables">Vegetables</option>
+                    <option value="Fruits">Fruits</option>
+                    <option value="Dairy & Eggs">Dairy & Eggs</option>
+                    <option value="Grains & Flours">Grains & Flours</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Measurement Unit</label>
+                  <select name="unit" className="form-input" value={productForm.unit} onChange={handleProductFormChange}>
+                    <option value="kg">Per kg</option>
+                    <option value="bunch">Per Bunch</option>
+                    <option value="dozen">Per Dozen</option>
+                    <option value="piece">Per Piece</option>
+                  </select>
+                </div>
               </div>
-              <div className="form-group"><label className="form-label">Description</label><textarea name="description" className="form-input" value={productForm.description} onChange={handleProductFormChange} rows="2" /></div>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-                <button type="button" onClick={() => setIsEditModalOpen(false)} className="btn btn-secondary">Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={formLoading}>{formLoading ? 'Saving...' : 'Save Product'}</button>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Unit Price (₹) *</label>
+                  <input type="number" step="0.01" name="price" className="form-input" value={productForm.price} onChange={handleProductFormChange} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Available Stock Quantity *</label>
+                  <input type="number" name="stock" className="form-input" value={productForm.stock} onChange={handleProductFormChange} required />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Description / Harvest Notes</label>
+                <textarea name="description" className="form-input" value={productForm.description} onChange={handleProductFormChange} rows="2" placeholder="e.g. Freshly picked this morning, pesticide-free..." />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Product Image</label>
+                {imagePreview && (
+                  <div style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1.5px solid var(--border-color)' }}>
+                      <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Current preview. Choose a new file below if you wish to replace it.</span>
+                  </div>
+                )}
+                <input type="file" accept="image/*" onChange={handleImageChange} className="form-input" style={{ padding: '0.4rem' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.75rem' }}>
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={formLoading} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Save size={16} /> {formLoading ? 'Saving Changes...' : 'Save Product Changes'}
+                </button>
               </div>
             </form>
           </div>

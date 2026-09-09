@@ -18,7 +18,7 @@ const farmController = {
         address: f.address,
         latitude: f.latitude,
         longitude: f.longitude,
-        maxDeliveryRadius: f.maxDeliveryRadius !== undefined ? f.maxDeliveryRadius : 15,
+        maxDeliveryRadius: f.maxDeliveryRadius !== undefined ? f.maxDeliveryRadius : 100,
         username: f.username,
         email: f.email
       }));
@@ -53,7 +53,7 @@ const farmController = {
         address: farmer.address,
         latitude: farmer.latitude,
         longitude: farmer.longitude,
-        maxDeliveryRadius: farmer.maxDeliveryRadius !== undefined ? farmer.maxDeliveryRadius : 15,
+        maxDeliveryRadius: farmer.maxDeliveryRadius !== undefined ? farmer.maxDeliveryRadius : 100,
         username: farmer.username,
         email: farmer.email,
         products: products || []

@@ -43,18 +43,22 @@ const Checkout = () => {
 
   // Load user details & try detecting browser location
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const u = JSON.parse(storedUser);
-      setFormData(prev => ({
-        ...prev,
-        name: u.username || '',
-        phone: u.phone || '',
-        deliveryAddress: u.address || ''
-      }));
-      if (u.latitude && u.longitude) {
-        setConsumerCoords({ lat: parseFloat(u.latitude), lng: parseFloat(u.longitude) });
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const u = JSON.parse(storedUser);
+        setFormData(prev => ({
+          ...prev,
+          name: u.username || '',
+          phone: u.phone || '',
+          deliveryAddress: u.address || ''
+        }));
+        if (u.latitude && u.longitude) {
+          setConsumerCoords({ lat: parseFloat(u.latitude), lng: parseFloat(u.longitude) });
+        }
       }
+    } catch (e) {
+      console.error('Failed to parse user in checkout:', e);
     }
 
     if (navigator.geolocation) {
@@ -77,7 +81,7 @@ const Checkout = () => {
       const dist = (consumerCoords.lat && consumerCoords.lng && farmLat && farmLng)
         ? calculateHaversine(farmLat, farmLng, consumerCoords.lat, consumerCoords.lng)
         : null;
-      const maxRadius = item.farm.maxDeliveryRadius !== undefined ? item.farm.maxDeliveryRadius : 15;
+      const maxRadius = item.farm.maxDeliveryRadius !== undefined ? item.farm.maxDeliveryRadius : 100;
       const fee = calculateFeeForDistance(dist);
       const isExceeded = dist !== null && dist > maxRadius;
 
@@ -189,14 +193,14 @@ const Checkout = () => {
               <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '0.75rem', color: 'var(--primary-deep)' }}>
                 Generated Order(s):
               </h3>
-              {orderSuccess.map((ord, idx) => (
+              {Array.isArray(orderSuccess) && orderSuccess.map((ord, idx) => (
                 <div key={ord._id || idx} style={{ borderBottom: idx !== orderSuccess.length - 1 ? '1px dashed #cbd5e1' : 'none', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', fontWeight: '700' }}>
-                    <span>🌾 {ord.farmName}</span>
-                    <span style={{ color: 'var(--accent-clay)' }}>₹{ord.totalAmount.toFixed(2)}</span>
+                    <span>🌾 {ord.farmName || 'Local Farm'}</span>
+                    <span style={{ color: 'var(--accent-clay)' }}>₹{Number(ord.totalAmount || 0).toFixed(2)}</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Status: <strong style={{ color: 'var(--primary-medium)' }}>{ord.status}</strong> • Payment: {ord.paymentMethod}
+                    Status: <strong style={{ color: 'var(--primary-medium)' }}>{ord.status || 'Pending'}</strong> • Payment: {ord.paymentMethod || 'COD'}
                   </div>
                 </div>
               ))}

@@ -1,4 +1,4 @@
-# LOCAL FARM CONNECT: DIRECT FARM-TO-CONSUMER E-COMMERCE PLATFORM
+# FARMLEY CONNECT: DIRECT FARM-TO-CONSUMER E-COMMERCE PLATFORM
 ## SCRUM BOOK: SUBMISSION - 2 (CIE 2)
 
 ---
@@ -42,7 +42,7 @@
 
 ## 1. UPDATED SPRINT DETAILS
 
-The **Local Farm Connect** platform was developed following the **Agile Scrum Framework** across four sprints. Below is the official Sprint Tracking Log formatted according to evaluation requirements:
+The **Farmley Connect** platform was developed following the **Agile Scrum Framework** across four sprints. Below is the official Sprint Tracking Log formatted according to evaluation requirements:
 
 ### 📅 Sprint - 1: Core Setup & Farmer Auth Foundation
 
@@ -289,7 +289,7 @@ Stores customer ratings and reviews for farms.
 
 ## 3. DATA FLOW DIAGRAM (DFD)
 
-The Data Flow Diagrams (DFD) represent the logical movement of data throughout the **Local Farm Connect** system across Level 0, Level 1 (Role-specific), and Level 2 detailed process decompositions.
+The Data Flow Diagrams (DFD) represent the logical movement of data throughout the **Farmley Connect** system across Level 0, Level 1 (Role-specific), and Level 2 detailed process decompositions.
 
 ### 3.1 Level 0 - System Context Diagram
 Depicts the primary boundary of the system and its data flow exchanges with External Entities (**Farmer**, **Consumer**).

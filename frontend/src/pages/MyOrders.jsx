@@ -1,3 +1,5 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ShoppingBag, Clock, CheckCircle, Truck, Package, MapPin, Store, ArrowLeft, KeyRound, ShieldCheck } from 'lucide-react';
 
 const MyOrders = () => {
@@ -31,9 +33,11 @@ const MyOrders = () => {
         throw new Error(data.message || 'Failed to load order history.');
       }
 
-      setOrders(data);
+      setOrders(Array.isArray(data) ? data : (Array.isArray(data?.orders) ? data.orders : []));
     } catch (err) {
-      setError(err.message);
+      console.error('fetchOrders error:', err);
+      setError(err.message || 'Failed to load orders.');
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -110,7 +114,7 @@ const MyOrders = () => {
                         </h3>
                       </div>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        Order ID: <span style={{ fontFamily: 'monospace', fontWeight: '700' }}>#{order._id}</span> • Placed: {new Date(order.createdAt).toLocaleDateString()}
+                        Order ID: <span style={{ fontFamily: 'monospace', fontWeight: '700' }}>#{order._id}</span> • Placed: {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Recent'}
                       </span>
                     </div>
 
@@ -131,13 +135,13 @@ const MyOrders = () => {
 
                   {/* Items List */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.25rem' }}>
-                    {order.items.map((item, idx) => (
+                    {(order.items || []).map((item, idx) => (
                       <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                         <span>
                           <strong style={{ color: 'var(--primary-deep)' }}>{item.title}</strong> x {item.quantity} {item.unit}s
                         </span>
                         <span style={{ fontWeight: '600', color: 'var(--text-dark)' }}>
-                          ₹{(item.price * item.quantity).toFixed(2)}
+                          ₹{((item.price || 0) * (item.quantity || 1)).toFixed(2)}
                         </span>
                       </div>
                     ))}
@@ -191,7 +195,7 @@ const MyOrders = () => {
                     </div>
                     <div>
                       <span style={{ color: 'var(--text-muted)', marginRight: '0.75rem' }}>Payment: {order.paymentMethod}</span>
-                      <strong style={{ fontSize: '1.15rem', color: 'var(--accent-clay)' }}>Total: ₹{order.totalAmount.toFixed(2)}</strong>
+                      <strong style={{ fontSize: '1.15rem', color: 'var(--accent-clay)' }}>Total: ₹{Number(order.totalAmount || 0).toFixed(2)}</strong>
                     </div>
                   </div>
 

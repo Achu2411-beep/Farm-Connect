@@ -262,6 +262,15 @@ const authController = {
 
       const role = user.role || 'farmer';
 
+      // Check if role matches expectedRole when specified
+      if (req.body.expectedRole && role !== req.body.expectedRole) {
+        const roleLabel = role === 'farmer' ? 'Farmer' : 'Consumer';
+        const expectedLabel = req.body.expectedRole === 'farmer' ? 'Farmer' : 'Consumer';
+        return res.status(400).json({
+          message: `This account is registered as a ${roleLabel}. Please log in through the ${roleLabel} Login portal.`
+        });
+      }
+
       // Check verification for farmers
       if (role === 'farmer' && !user.isVerified) {
         const otp = generateOTP();
@@ -296,7 +305,7 @@ const authController = {
           address: user.address,
           latitude: user.latitude,
           longitude: user.longitude,
-          maxDeliveryRadius: user.maxDeliveryRadius !== undefined ? user.maxDeliveryRadius : 15,
+          maxDeliveryRadius: user.maxDeliveryRadius !== undefined ? user.maxDeliveryRadius : 100,
           farmDescription: user.farmDescription || ''
         }
       });
@@ -341,7 +350,7 @@ const authController = {
           address: updatedUser.address,
           latitude: updatedUser.latitude,
           longitude: updatedUser.longitude,
-          maxDeliveryRadius: updatedUser.maxDeliveryRadius !== undefined ? updatedUser.maxDeliveryRadius : 15,
+          maxDeliveryRadius: updatedUser.maxDeliveryRadius !== undefined ? updatedUser.maxDeliveryRadius : 100,
           farmDescription: updatedUser.farmDescription || ''
         }
       });

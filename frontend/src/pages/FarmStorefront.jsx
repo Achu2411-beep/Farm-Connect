@@ -1,14 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import L from 'leaflet';
-import { MapPin, Phone, Mail, Store, Sprout, ShoppingCart, Check, Camera, ArrowLeft, Star, MessageSquare, Send } from 'lucide-react';
+import { MapPin, Phone, Mail, Store, Sprout, ShoppingCart, Check, Camera, ArrowLeft, Star, MessageSquare, Send, Edit, LayoutDashboard } from 'lucide-react';
 
-const FarmStorefront = () => {
+const FarmStorefront = ({ user: propUser }) => {
   const { id } = useParams();
   const [farm, setFarm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [addedItems, setAddedItems] = useState({});
+
+  const currentUser = propUser || (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || 'null');
+    } catch {
+      return null;
+    }
+  })();
+
+  const isOwner = Boolean(
+    currentUser &&
+    (currentUser.role === 'farmer' || !currentUser.role) &&
+    farm &&
+    (
+      (currentUser._id && farm._id && currentUser._id.toString() === farm._id.toString()) ||
+      (currentUser.id && farm._id && currentUser.id.toString() === farm._id.toString()) ||
+      (currentUser.username && farm.username && currentUser.username === farm.username)
+    )
+  );
 
   // Reviews States
   const [reviews, setReviews] = useState([]);
@@ -191,6 +210,40 @@ const FarmStorefront = () => {
           <ArrowLeft size={16} /> Back to All Farms
         </Link>
 
+        {/* Farm Owner Banner */}
+        {isOwner && (
+          <div style={{
+            background: '#ecfdf5',
+            border: '1.5px solid #10b981',
+            borderRadius: 'var(--radius-md)',
+            padding: '1.25rem 1.75rem',
+            marginBottom: '1.75rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ background: '#d1fae5', borderRadius: '50%', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Sprout size={24} style={{ color: '#059669' }} />
+              </div>
+              <div>
+                <strong style={{ color: '#065f46', fontSize: '1.05rem', display: 'block', marginBottom: '0.2rem' }}>
+                  You are viewing your own Farm Storefront
+                </strong>
+                <span style={{ color: '#047857', fontSize: '0.88rem' }}>
+                  This is how customers see your farm. To edit produce details, adjust prices, or restock items, open your Farmer Dashboard.
+                </span>
+              </div>
+            </div>
+            <Link to="/dashboard" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem', fontSize: '0.9rem' }}>
+              <LayoutDashboard size={17} /> Go to Farmer Dashboard
+            </Link>
+          </div>
+        )}
+
         {/* Farm Hero Header */}
         <div style={{
           background: 'linear-gradient(135deg, var(--primary-deep) 0%, var(--primary-medium) 100%)',
@@ -210,7 +263,7 @@ const FarmStorefront = () => {
                 <Sprout size={14} style={{ color: 'var(--primary-light)' }} /> Direct Partner Storefront
               </span>
               <span style={{ background: 'rgba(255,255,255,0.2)', color: '#a7f3d0', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: '700' }}>
-                🚚 Max Delivery Radius: {farm.maxDeliveryRadius !== undefined ? farm.maxDeliveryRadius : 15} km
+                🚚 Max Delivery Radius: {farm.maxDeliveryRadius !== undefined ? farm.maxDeliveryRadius : 100} km
               </span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(245, 158, 11, 0.25)', color: '#fde047', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: '800' }}>
                 <Star size={14} fill="#fde047" /> {avgRating} ({reviews.length} {reviews.length === 1 ? 'Review' : 'Reviews'})
@@ -286,9 +339,41 @@ const FarmStorefront = () => {
                   </div>
 
                   <div style={{ padding: '1rem 1.25rem', background: '#faf9f6', borderTop: '1px solid #f1f5f9' }}>
-                    <button onClick={() => handleAddToCart(product)} disabled={product.stock <= 0} className="btn btn-primary" style={{ width: '100%', padding: '0.7rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', backgroundColor: addedItems[product._id] ? 'var(--primary-deep)' : 'var(--primary-medium)' }}>
-                      {addedItems[product._id] ? <><Check size={16} /> Added to Cart!</> : <><ShoppingCart size={16} /> Add to Cart</>}
-                    </button>
+                    {isOwner ? (
+                      <Link
+                        to="/dashboard"
+                        className="btn btn-secondary"
+                        style={{
+                          width: '100%',
+                          padding: '0.7rem',
+                          fontSize: '0.9rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.4rem'
+                        }}
+                      >
+                        <Edit size={16} /> Edit in Dashboard
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        disabled={product.stock <= 0}
+                        className="btn btn-primary"
+                        style={{
+                          width: '100%',
+                          padding: '0.7rem',
+                          fontSize: '0.9rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.4rem',
+                          backgroundColor: addedItems[product._id] ? 'var(--primary-deep)' : 'var(--primary-medium)'
+                        }}
+                      >
+                        {addedItems[product._id] ? <><Check size={16} /> Added to Cart!</> : <><ShoppingCart size={16} /> Add to Cart</>}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -340,14 +425,20 @@ const FarmStorefront = () => {
               Write a Customer Review
             </h3>
 
-            {reviewError && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.85rem', marginBottom: '1rem' }}>{reviewError}</div>}
-            {reviewSuccess && <div style={{ background: '#e8f5e9', color: 'var(--primary-medium)', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.85rem', marginBottom: '1rem' }}>{reviewSuccess}</div>}
+            {isOwner ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic', lineHeight: '1.6' }}>
+                You are viewing your own farm storefront. Farmers cannot submit customer reviews for their own farm.
+              </p>
+            ) : (
+              <>
+                {reviewError && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.85rem', marginBottom: '1rem' }}>{reviewError}</div>}
+                {reviewSuccess && <div style={{ background: '#e8f5e9', color: 'var(--primary-medium)', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.85rem', marginBottom: '1rem' }}>{reviewSuccess}</div>}
 
-            <form onSubmit={handleReviewSubmit}>
-              <div className="form-group">
-                <label className="form-label">Star Rating *</label>
-                <div style={{ display: 'flex', gap: '0.5rem', cursor: 'pointer', margin: '0.4rem 0' }}>
-                  {[1, 2, 3, 4, 5].map((star) => (
+                <form onSubmit={handleReviewSubmit}>
+                  <div className="form-group">
+                    <label className="form-label">Star Rating *</label>
+                    <div style={{ display: 'flex', gap: '0.5rem', cursor: 'pointer', margin: '0.4rem 0' }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
@@ -376,6 +467,8 @@ const FarmStorefront = () => {
                 <Send size={16} /> {reviewLoading ? 'Posting...' : 'Submit Review'}
               </button>
             </form>
+            </>
+            )}
           </div>
 
         </div>

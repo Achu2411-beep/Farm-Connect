@@ -85,7 +85,7 @@ const Register = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem' }}>
               <Sprout size={32} />
-              <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800 }}>Local Farm Connect</h1>
+              <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800 }}>Farmley Connect</h1>
             </div>
             <h2>Register as a Farmer Partner</h2>
             <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>

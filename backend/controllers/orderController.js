@@ -1,3 +1,5 @@
+const dbEngine = require('../config/dbEngine');
+
 // Haversine formula helper to calculate distance in km
 const calculateHaversineDistance = (lat1, lon1, lat2, lon2) => {
   if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
@@ -59,7 +61,7 @@ const orderController = {
         const farmer = await dbEngine.findUserById(farmerId);
         if (farmer && farmer.latitude && farmer.longitude && consumerLat && consumerLng) {
           const distance = calculateHaversineDistance(farmer.latitude, farmer.longitude, parseFloat(consumerLat), parseFloat(consumerLng));
-          const maxRadius = farmer.maxDeliveryRadius !== undefined ? farmer.maxDeliveryRadius : 15;
+          const maxRadius = farmer.maxDeliveryRadius !== undefined ? farmer.maxDeliveryRadius : 100;
 
           if (distance > maxRadius) {
             return res.status(400).json({
@@ -162,7 +164,9 @@ const orderController = {
         return res.status(404).json({ message: 'Order not found.' });
       }
 
-      if (order.farmerId !== farmerId) {
+      const prodFarmerId = (order.farmerId || '').toString();
+      const authFarmerId = (farmerId || '').toString();
+      if (prodFarmerId && authFarmerId && prodFarmerId !== authFarmerId) {
         return res.status(401).json({ message: 'Not authorized to update this order.' });
       }
 

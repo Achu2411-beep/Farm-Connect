@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Sprout, LogOut, LayoutDashboard, LogIn, UserPlus, MapPin, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { Sprout, LogOut, LayoutDashboard, UserPlus, MapPin, ShoppingBag, ShoppingCart } from 'lucide-react';
 import { CartProvider, useCart } from './context/CartContext';
 
 // Import Pages
@@ -20,14 +20,14 @@ function Navigation({ user, logout }) {
   const location = useLocation();
   const { totalCount } = useCart();
 
-  // Show Cart in navbar only if user is a consumer, cart has items, or browsing shop pages (hidden on intro landing page for guests with empty cart)
-  const showCart = user?.role === 'consumer' || totalCount > 0 || (location.pathname !== '/' && user?.role !== 'farmer');
+  // Never show Cart on the home page ('/'); show on other pages for consumers or when cart has items
+  const showCart = location.pathname !== '/' && (user?.role === 'consumer' || totalCount > 0 || user?.role !== 'farmer');
 
   return (
     <nav className="navbar">
       <Link to="/" className="logo">
         <Sprout size={28} />
-        LocalFarm<span>Connect</span>
+        Farmley<span>Connect</span>
       </Link>
       <ul className="nav-links">
         <li>
@@ -91,20 +91,20 @@ function Navigation({ user, logout }) {
         ) : (
           <>
             <li>
-              <Link to="/login" className={`nav-link ${location.pathname === '/login' ? 'active' : ''}`}>
-                <LogIn size={18} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                Login
+              <Link to="/login/farmer" className={`nav-link ${(location.pathname === '/login/farmer' || location.pathname === '/farmer-login') ? 'active' : ''}`}>
+                <Sprout size={17} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                Farmer Login
               </Link>
             </li>
             <li>
-              <Link to="/register-consumer" className="btn btn-secondary" style={{ padding: '0.5rem 1rem' }}>
-                <ShoppingBag size={16} />
-                Buyer Sign Up
+              <Link to="/login/consumer" className={`nav-link ${(location.pathname === '/login/consumer' || location.pathname === '/consumer-login') ? 'active' : ''}`}>
+                <ShoppingBag size={17} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                Consumer Login
               </Link>
             </li>
             <li>
-              <Link to="/register" className="btn btn-primary" style={{ padding: '0.5rem 1.2rem' }}>
-                <UserPlus size={18} />
+              <Link to="/register" className="btn btn-primary" style={{ padding: '0.45rem 1rem', fontSize: '0.88rem' }}>
+                <UserPlus size={16} />
                 Join as Farmer
               </Link>
             </li>
@@ -123,7 +123,13 @@ function AppContent() {
     const storedUser = localStorage.getItem('user');
     const storedToken = localStorage.getItem('token');
     if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Failed to parse user from localStorage:', e);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
     }
   }, []);
 
@@ -152,7 +158,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/farms" element={<ExploreFarms />} />
-          <Route path="/farm/:id" element={<FarmStorefront />} />
+          <Route path="/farm/:id" element={<FarmStorefront user={user} />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/my-orders" element={<MyOrders />} />
@@ -160,12 +166,16 @@ function AppContent() {
           <Route path="/register-consumer" element={<RegisterConsumer login={login} />} />
           <Route path="/verify-otp" element={<VerifyOtp login={login} />} />
           <Route path="/login" element={<Login login={login} />} />
+          <Route path="/login/farmer" element={<Login login={login} initialRole="farmer" />} />
+          <Route path="/login/consumer" element={<Login login={login} initialRole="consumer" />} />
+          <Route path="/farmer-login" element={<Login login={login} initialRole="farmer" />} />
+          <Route path="/consumer-login" element={<Login login={login} initialRole="consumer" />} />
           <Route path="/dashboard" element={<Dashboard user={user} setUser={setUser} />} />
         </Routes>
       </main>
       <footer style={{ background: 'var(--primary-deep)', color: 'white', padding: '2rem 1rem', textAlign: 'center', fontSize: '0.9rem' }}>
         <div className="container" style={{ padding: 0 }}>
-          <p>&copy; {new Date().getFullYear()} Local Farm Connect. Cultivating direct community relationships.</p>
+          <p>&copy; {new Date().getFullYear()} Farmley Connect. Cultivating direct community relationships.</p>
         </div>
       </footer>
     </div>

@@ -11,6 +11,7 @@
     "farmDescription": "Fresh pesticide-free organic vegetables, leafy greens, and farm-fresh dairy direct from our fields to your table.",
     "latitude": 10.9755,
     "longitude": 76.224,
+    "maxDeliveryRadius": 100,
     "isVerified": true,
     "createdAt": "2026-08-01T10:00:00.000Z"
   },
@@ -26,6 +27,7 @@
     "farmDescription": "Specializing in high-altitude organic fruits, wild honey, and natural spices grown using traditional zero-chemical farming techniques.",
     "latitude": 10.982,
     "longitude": 76.211,
+    "maxDeliveryRadius": 100,
     "isVerified": true,
     "createdAt": "2026-08-03T11:30:00.000Z"
   },
@@ -41,6 +43,7 @@
     "farmDescription": "Sustainable permaculture farm producing free-range eggs, organic tubers, cassava, and seasonal tropical fruits.",
     "latitude": 11.0734,
     "longitude": 76.074,
+    "maxDeliveryRadius": 100,
     "isVerified": true,
     "createdAt": "2026-08-05T14:15:00.000Z"
   },

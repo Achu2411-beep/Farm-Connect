@@ -56,7 +56,7 @@ const productController = {
     try {
       const { title, category, unit, price, stock, description } = req.body;
       const productId = req.params.id;
-      const farmerId = req.user._id;
+      const farmerId = (req.user?._id || req.user?.id || '').toString();
 
       const product = await dbEngine.findProductById(productId);
       if (!product) {
@@ -64,7 +64,8 @@ const productController = {
       }
 
       // Check authorization
-      if (product.farmerId !== farmerId) {
+      const prodFarmerId = (product.farmerId || '').toString();
+      if (prodFarmerId && farmerId && prodFarmerId !== farmerId) {
         return res.status(401).json({ message: 'Not authorized to edit this product.' });
       }
 
@@ -105,7 +106,7 @@ const productController = {
   deleteProduct: async (req, res) => {
     try {
       const productId = req.params.id;
-      const farmerId = req.user._id;
+      const farmerId = (req.user?._id || req.user?.id || '').toString();
 
       const product = await dbEngine.findProductById(productId);
       if (!product) {
@@ -113,7 +114,8 @@ const productController = {
       }
 
       // Check authorization
-      if (product.farmerId !== farmerId) {
+      const prodFarmerId = (product.farmerId || '').toString();
+      if (prodFarmerId && farmerId && prodFarmerId !== farmerId) {
         return res.status(401).json({ message: 'Not authorized to delete this product.' });
       }
 

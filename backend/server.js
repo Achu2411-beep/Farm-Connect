@@ -24,7 +24,7 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 
 // Basic API Check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Local Farm Connect API is running' });
+  res.json({ status: 'ok', message: 'Farmley Connect API is running' });
 });
 
 const authRoutes = require('./routes/authRoutes');

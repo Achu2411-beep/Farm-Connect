@@ -68,7 +68,7 @@ const RegisterConsumer = ({ login }) => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem' }}>
               <ShoppingBag size={32} style={{ color: 'var(--primary-light)' }} />
-              <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800 }}>Local Farm Connect</h1>
+              <h1 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 800 }}>Farmley Connect</h1>
             </div>
             <h2>Shop Fresh from Local Farms</h2>
             <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>

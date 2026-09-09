@@ -14,8 +14,10 @@ const protect = async (req, res, next) => {
       }
       
       // Normalize user object so it's consistent
+      const userIdStr = user._id ? user._id.toString() : (user.id ? user.id.toString() : '');
       req.user = {
-        _id: user._id,
+        _id: userIdStr,
+        id: userIdStr,
         username: user.username,
         email: user.email,
         phone: user.phone,

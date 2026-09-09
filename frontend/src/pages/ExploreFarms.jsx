@@ -264,7 +264,7 @@ const ExploreFarms = () => {
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                       {userLocation && farm.latitude && farm.longitude && (() => {
                         const dist = calculateDistance(userLocation.lat, userLocation.lng, farm.latitude, farm.longitude);
-                        const maxRadius = farm.maxDeliveryRadius !== undefined ? farm.maxDeliveryRadius : 15;
+                        const maxRadius = farm.maxDeliveryRadius !== undefined ? farm.maxDeliveryRadius : 100;
                         const isDeliverable = dist !== null && dist <= maxRadius;
                         return (
                           <span style={{
@@ -281,7 +281,7 @@ const ExploreFarms = () => {
                       })()}
                       {(!userLocation || !farm.latitude || !farm.longitude) && (
                         <span style={{ background: '#f1f5f9', color: 'var(--text-muted)', padding: '0.25rem 0.6rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: '600' }}>
-                          🚚 Direct Delivery Radius: {farm.maxDeliveryRadius !== undefined ? farm.maxDeliveryRadius : 15} km
+                          🚚 Direct Delivery Radius: {farm.maxDeliveryRadius !== undefined ? farm.maxDeliveryRadius : 100} km
                         </span>
                       )}
                     </div>
