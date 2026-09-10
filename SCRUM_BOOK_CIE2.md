@@ -18,8 +18,8 @@
 
 * **Submission Date:** 18/08/2026
 * **Evaluation Event:** Continuous Internal Evaluation 2 (CIE 2)
-* **Project Guide:** Ms. Prajina K (Assistant Professor)
-* **Project Co-ordinator:** Mrs. Sruti Sudevan (HOD & Assistant Professor)
+* **Project Guide:** MR Adil Narakodden
+* **Project Co-ordinator:**MR Adil Narakodden
 
 ---
 
