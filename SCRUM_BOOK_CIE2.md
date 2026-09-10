@@ -5,8 +5,8 @@
 
 ### STUDENT PROFILE
 
-* **Name of Student:** ATHUL KRISHNA R
-* **Register Number:** MEA24MCA-XXXX
+* **Name of Student:** ASWATHI VIJAYACHANDRAN
+* **Register Number:** MEA25MCA-XXXX
 * **Course & Batch:** Master of Computer Applications (MCA)
 * **Semester:** S3 (Third Semester)
 * **Department:** Department of Computer Applications
