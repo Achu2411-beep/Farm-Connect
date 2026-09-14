@@ -72,7 +72,7 @@ const MapInput = ({ lat, lng, onChange }) => {
         if (numLat.toFixed(4) !== currentLatLng.lat.toFixed(4) || 
             numLng.toFixed(4) !== currentLatLng.lng.toFixed(4)) {
           markerRef.current.setLatLng([numLat, numLng]);
-          mapRef.current.panTo([numLat, numLng]);
+          mapRef.current.flyTo([numLat, numLng], 14, { animate: true, duration: 1 });
         }
       }
     }

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Sprout, MapPin, Phone, Mail, User, Lock, Store, FileText, ArrowRight } from 'lucide-react';
+import { Sprout, MapPin, Phone, Mail, User, Lock, Store, FileText, ArrowRight, Search, Loader2 } from 'lucide-react';
 import MapInput from '../components/MapInput';
 
 const Register = () => {
@@ -18,6 +18,11 @@ const Register = () => {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchTimeoutRef = useRef(null);
+  const suggestionsContainerRef = useRef(null);
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -26,7 +31,67 @@ const Register = () => {
       ...prev,
       [name]: value
     }));
+
+    if (name === 'address') {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      if (value.trim().length >= 3) {
+        searchTimeoutRef.current = setTimeout(() => {
+          fetchAddressSuggestions(value.trim());
+        }, 500);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    }
   };
+
+  const fetchAddressSuggestions = async (query) => {
+    try {
+      setSearchLoading(true);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`);
+      const data = await res.json();
+      setSuggestions(data || []);
+      setShowSuggestions(true);
+    } catch (err) {
+      console.error('Error fetching address suggestions:', err);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleSelectSuggestion = (suggestion) => {
+    const lat = parseFloat(suggestion.lat).toFixed(6);
+    const lon = parseFloat(suggestion.lon).toFixed(6);
+
+    setFormData((prev) => ({
+      ...prev,
+      address: suggestion.display_name,
+      latitude: lat,
+      longitude: lon
+    }));
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
+
+  const handleManualSearch = (e) => {
+    if (e) e.preventDefault();
+    if (formData.address.trim().length >= 2) {
+      fetchAddressSuggestions(formData.address.trim());
+    }
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (suggestionsContainerRef.current && !suggestionsContainerRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleCoordinatesChange = (lat, lng) => {
     setFormData((prev) => ({
@@ -220,19 +285,94 @@ const Register = () => {
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <MapPin size={15} /> Farm Physical Address *
+            <div className="form-group" style={{ position: 'relative' }} ref={suggestionsContainerRef}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <MapPin size={15} /> Farm Physical Address *
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>
+                  Type to search & locate on map
+                </span>
               </label>
-              <input
-                type="text"
-                name="address"
-                className="form-input"
-                placeholder="e.g. 12 High Street, Greenfield"
-                value={formData.address}
-                onChange={handleInputChange}
-                required
-              />
+              
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  name="address"
+                  className="form-input"
+                  placeholder="e.g. Aluva, Kochi, Kerala"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleManualSearch();
+                    }
+                  }}
+                  required
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={handleManualSearch}
+                  disabled={searchLoading || !formData.address.trim()}
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '0 1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    fontSize: '0.85rem',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title="Search location and pin on map"
+                >
+                  {searchLoading ? <Loader2 size={16} className="spin" /> : <Search size={16} />}
+                  Find on Map
+                </button>
+              </div>
+
+              {/* Suggestions Dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <ul style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: '#ffffff',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+                  listStyle: 'none',
+                  padding: '0.4rem 0',
+                  margin: '4px 0 0 0',
+                  zIndex: 1100,
+                  maxHeight: '220px',
+                  overflowY: 'auto'
+                }}>
+                  {suggestions.map((item, index) => (
+                    <li
+                      key={index}
+                      onClick={() => handleSelectSuggestion(item)}
+                      style={{
+                        padding: '0.65rem 1rem',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '0.5rem',
+                        borderBottom: index < suggestions.length - 1 ? '1px solid #f1f5f9' : 'none',
+                        transition: 'background-color 0.15s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0fdf4'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <MapPin size={14} style={{ flexShrink: 0, marginTop: '2px', color: 'var(--primary-medium)' }} />
+                      <span style={{ color: 'var(--text-main)', lineHeight: '1.4' }}>{item.display_name}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {/* Map Pinning */}
