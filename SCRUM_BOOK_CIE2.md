@@ -5,8 +5,8 @@
 
 ### STUDENT PROFILE
 
-* **Name of Student:** ATHUL KRISHNA R
-* **Register Number:** MEA24MCA-XXXX
+* **Name of Student:** ASWATHI VIJAYACHANDRAN
+* **Register Number:** MEA25MCA-XXXX
 * **Course & Batch:** Master of Computer Applications (MCA)
 * **Semester:** S3 (Third Semester)
 * **Department:** Department of Computer Applications
@@ -18,8 +18,8 @@
 
 * **Submission Date:** 18/08/2026
 * **Evaluation Event:** Continuous Internal Evaluation 2 (CIE 2)
-* **Project Guide:** Ms. Prajina K (Assistant Professor)
-* **Project Co-ordinator:** Mrs. Sruti Sudevan (HOD & Assistant Professor)
+* **Project Guide:** MR Adil Narakodden
+* **Project Co-ordinator:** MR Adil Narakodden
 
 ---
 

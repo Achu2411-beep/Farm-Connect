@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, User as UserIcon, ShoppingBag, MapPin, Phone, FileText, CheckCircle, Save, Sprout, Plus, Edit, Trash2, Camera, Package, Tag, Coins, X, Truck, Clock } from 'lucide-react';
+import { LayoutDashboard, User as UserIcon, ShoppingBag, MapPin, Phone, FileText, CheckCircle, Save, Sprout, Plus, Edit, Trash2, Camera, Package, Tag, Coins, X, Truck, Clock, ShieldCheck } from 'lucide-react';
 import MapInput from '../components/MapInput';
 
 const Dashboard = ({ user, setUser }) => {
